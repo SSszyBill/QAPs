@@ -1,129 +1,142 @@
-# solver.py
 import torch
 import torch.nn as nn
 from scipy.optimize import linear_sum_assignment
-import numpy as np
-from sinkhorn import SinkhornLayer
 
-class SK_QAP_Solver:
-    def __init__(self, n, A_np, B_np, device='cpu', tau=1.0, batch_size=100):
+class SK_QAP_Solver(nn.Module):
+    def __init__(self, n, A_np, B_np, device='cpu', batch_size=200, **kwargs):
+        super().__init__()
         self.n = n
         self.device = device
         self.batch_size = batch_size
         
-        # 1. 数据扩展到 Batch 维度
-        # A, B: (N, N) -> (1, N, N) 以便广播
+        # 1. 流量与距离矩阵
         self.A = torch.tensor(A_np, dtype=torch.float32, device=device).unsqueeze(0)
         self.B = torch.tensor(B_np, dtype=torch.float32, device=device).unsqueeze(0)
         
-        # 2. 初始化 Primal Z (Batch, N, N)
-        # 使用不同的随机种子初始化，探索不同区域
-        self.Z = torch.randn((batch_size, n, n), device=device, requires_grad=True)
+        # 2. 决策变量 Z (连续，可正可负)
+        self.Z = nn.Parameter(torch.randn(batch_size, n, n, device=device))
         
-        # 3. 初始化 Dual Y (Batch, N, N)
-        self.Y = torch.ones((batch_size, n, n), device=device) * 5.0
+        # 3. 对偶变量 Y
+        self.Y = torch.ones(batch_size, n, n, device=device) * 5.0
         
-        # 4. Sinkhorn
-        self.init_tau = tau
-        self.sk_layer = SinkhornLayer(n_iter=20, tau=tau)
-        
+        # 优化器
         self.optimizer = torch.optim.Adam([self.Z], lr=0.1)
 
-    def solve(self, max_iter=2000, lr_dual=0.01):
-        # 记录全局最优
+    def knight_sinkhorn_step(self, A, n_iter=20):
+        """Knight 算法：把非负矩阵 A 修理成双随机矩阵 P"""
+        r = torch.ones((A.shape[0], A.shape[1], 1), device=A.device)
+        c = torch.ones((A.shape[0], A.shape[1], 1), device=A.device)
+        
+        for _ in range(n_iter):
+            # c = 1 / (A^T * r)
+            val_c = torch.matmul(A.transpose(1, 2), r)
+            c = 1.0 / (val_c + 1e-12)
+            
+            # r = 1 / (A * c)
+            val_r = torch.matmul(A, c)
+            r = 1.0 / (val_r + 1e-12)
+            
+        # P = D A E
+        P = r * A * c.transpose(1, 2)
+        return P
+
+    def solve(self, max_iter=2000, lr_dual=0.01, log_interval=100, log_path=None):
         global_best_score = float('inf')
         global_best_perm = None
         
-        # === 新增：用于绘图的 Cost 历史记录 ===
-        cost_history = []
+        soft_cost_history = [] # 记录每一步的连续 Loss
+        real_cost_history = [] # 记录每 log_interval 步的真实离散 Cost (iter, cost)
         
-        for t in range(max_iter):
-            # === 温度衰减策略 (Annealing) ===
-            progress = t / max_iter
-            current_tau = max(0.05, self.init_tau * (1 - progress))
-            self.sk_layer.tau = current_tau
+        # === 1. 初始化日志头 (固定宽度对齐) ===
+        # 格式说明: 
+        # :<8  左对齐，占8格
+        # :<12 左对齐，占12格
+        header = f"{'Iter':<8} | {'SoftCost':<12} | {'RealCost':<12} | {'Vio(Bin)':<12} | {'Grad|Z|':<12}"
+        
+        if log_path:
+            with open(log_path, 'w') as f:
+                f.write(header + "\n")
+        
+        # 终端打印
+        print("-" * 70)
+        print(header)
+        print("-" * 70)
 
-            # === Step 1: Forward ===
+        for t in range(max_iter):
             self.optimizer.zero_grad()
             
-            # P: (Batch, N, N)
-            P = self.sk_layer(self.Z)
+            # === 2. 核心逻辑 ===
+            A_in = torch.sigmoid(self.Z)               
+            P = self.knight_sinkhorn_step(A_in)        
             
-            # === Loss 计算 (Batch Wise) ===
-            # QAP Objective: tr(A P B P^T)
+            # === 3. 计算 Loss ===
             term1 = torch.matmul(self.A, P)       
             term2 = torch.matmul(self.B, P.transpose(1, 2)) 
-            
-            # Trace 的 Batch 版本: 对角线求和
             prod = torch.matmul(term1, term2.transpose(1, 2))
-            loss_qap = torch.diagonal(prod, dim1=1, dim2=2).sum(-1) # (Batch,)
+            loss_qap_batch = torch.diagonal(prod, dim1=1, dim2=2).sum(-1)
             
-            # PDBO Penalty: sum(Y * (P^2 - P))
             g_val = P**2 - P
-            loss_pdbo = torch.sum(self.Y * g_val, dim=(1, 2)) # (Batch,)
+            loss_pdbo_batch = torch.sum(self.Y * g_val, dim=(1, 2))
             
-            # 总 Loss
-            loss_total = (loss_qap + loss_pdbo).mean()
+            loss_total = (loss_qap_batch + loss_pdbo_batch).mean()
             
-            # === 新增：记录当前 Batch 中最好的连续 Cost (用于画图) ===
-            # 这里记录 loss_qap 的最小值，代表当前优化方向的“能量”
-            current_best_continuous = loss_qap.min().item()
-            cost_history.append(current_best_continuous)
-            
-            # === Step 2: Backward ===
+            # === 4. 梯度更新 ===
             loss_total.backward()
+            grad_norm = self.Z.grad.norm().item() 
             torch.nn.utils.clip_grad_norm_([self.Z], max_norm=1.0)
             self.optimizer.step()
             
-            # === Step 3: Dual Update ===
+            # === 5. 对偶变量更新 & 记录 Soft Cost ===
             with torch.no_grad():
                 self.Y += lr_dual * g_val
                 
-                # 扰动机制
+                current_soft_min = loss_qap_batch.min().item()
+                soft_cost_history.append(current_soft_min)
+                
                 if t % 100 == 0:
-                     self.Z.data += torch.randn_like(self.Z) * 0.01 * (1-progress)
+                     self.Z.data += torch.randn_like(self.Z) * 0.01
 
-            # === Step 4: 评估 ===
-            # 提高频率到每 100 次检查一次，或者最后一次必定检查
-            if t % 100 == 0 or t == max_iter - 1:
-                # 找到当前 Batch 中 Loss (QAP+Penalty) 最小的索引
-                # 注意：这里我们用 loss_qap + loss_pdbo 来选最“合法”且 Cost 低的
-                min_loss_idx = torch.argmin(loss_qap + loss_pdbo)
+            # === 6. 评估与打印 ===
+            if t % log_interval == 0 or t == max_iter - 1:
                 
-                # 离散化评估这个最好的
-                best_in_batch_P = P[min_loss_idx]
-                cost, perm = self.evaluate_single(best_in_batch_P)
+                # 找到 Soft Loss 最小的解
+                min_idx = torch.argmin(loss_qap_batch + loss_pdbo_batch)
+                best_soft_P = P[min_idx]
                 
-                if cost < global_best_score:
-                    global_best_score = cost
+                # 计算真实离散 Cost
+                real_cost, perm = self.evaluate_single(best_soft_P)
+                
+                # 记录 Real Cost (带上时间戳 t，方便画图)
+                real_cost_history.append((t, real_cost))
+                
+                if real_cost < global_best_score:
+                    global_best_score = real_cost
                     global_best_perm = perm
                 
-                # 打印日志 (可选)
-                # int_gap = torch.abs(g_val).mean().item()
-                # print(f"Iter {t} | Cost: {cost:.2f} | Best: {global_best_score:.2f}")
-
-        # === 修改返回值：增加 cost_history ===
-        return global_best_score, global_best_perm, cost_history
+                vio = g_val.abs().mean().item()
+                
+                # 格式化打印 (注意宽度要和 header 一致)
+                log_str = f"{t:<8} | {current_soft_min:<12.2f} | {real_cost:<12.2f} | {vio:<12.4f} | {grad_norm:<12.4f}"
+                print(log_str)
+                
+                if log_path:
+                    with open(log_path, 'a') as f:
+                        f.write(log_str + "\n")
+                if t == max_iter - 1:
+                    print(t,"\n")
+                    print(best_soft_P,"\n")
+                    print(self.evaluate_single(best_soft_P),"\n")
+        # 返回两个 history
+        return global_best_score, global_best_perm, soft_cost_history, real_cost_history
 
     def evaluate_single(self, P_soft):
-        """评估单个矩阵 (非 Batch)"""
+        """匈牙利算法离散化"""
         with torch.no_grad():
             P_np = P_soft.detach().cpu().numpy()
-            
-            # 处理 NaN/Inf 情况
-            if not np.isfinite(P_np).all():
-                P_np = np.nan_to_num(P_np, nan=0.0, posinf=0.0, neginf=0.0)
-
-            # 匈牙利算法离散化
             row_ind, col_ind = linear_sum_assignment(-P_np)
-            
             P_bin = torch.zeros((self.n, self.n), device=self.device)
             P_bin[row_ind, col_ind] = 1.0
-
-            # 计算离散 Cost
-            # squeeze() 确保维度匹配: (N, N) @ (N, N) ...
             A_sq = self.A.squeeze(0)
             B_sq = self.B.squeeze(0)
-            
             cost = torch.trace(A_sq @ P_bin @ B_sq @ P_bin.t())
             return cost.item(), P_bin

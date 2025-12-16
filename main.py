@@ -3,80 +3,82 @@ import torch
 import os
 import time
 import numpy as np
-import pandas as pd              # 新增：用于处理表格和导出Excel
-import matplotlib.pyplot as plt  # 新增：用于画图
+import pandas as pd
+import matplotlib.pyplot as plt
 from parse import parse_qap_dat, parse_qap_solution
 from sk_solver import SK_QAP_Solver
-from ALM_solver import *
 
 # === 配置类 ===
 class Config:
     data_dir = 'qaplibs/qapdata'
     soln_dir = 'qaplibs/qapsoln'
-    output_dir = 'results'       # 新增：结果输出总目录
-    plot_dir = 'results/plots_ALM'   # 新增：折线图存放目录
+    
+    base_result_dir = '/home/szy/QAP/results'
+    output_dir = os.path.join(base_result_dir, 'logs')   
+    plot_dir = os.path.join(base_result_dir, 'plots')    
+    
     rho = 100
-    limit = 20           
+    limit = 50           
     batch_size = 200     
     iter = 3000          
     lr_dual = 0.05       
-    tau = 2   
 
 def check_constraints(perm_matrix):
-    """
-    检查排列矩阵是否满足约束
-    返回: (是否通过, 最大违背误差)
-    """
-    # 转为 numpy 或保持 tensor
+    """检查排列矩阵是否满足约束"""
     if isinstance(perm_matrix, torch.Tensor):
         P = perm_matrix.cpu().detach().numpy()
     else:
         P = perm_matrix
-
-    n = P.shape[0]
     
-    # 1. 检查二值约束 (是否只有 0 和 1)
-    # 计算元素距离 0 或 1 的最近距离
+    # 1. 二值约束
     dist_to_binary = np.minimum(np.abs(P), np.abs(P - 1))
     bin_error = np.max(dist_to_binary)
     
-    # 2. 检查行和约束 (是否为 1)
+    # 2. 行和约束
     row_sum = np.sum(P, axis=1)
     row_error = np.max(np.abs(row_sum - 1))
     
-    # 3. 检查列和约束 (是否为 1)
+    # 3. 列和约束
     col_sum = np.sum(P, axis=0)
     col_error = np.max(np.abs(col_sum - 1))
     
-    # 总误差
     max_error = max(bin_error, row_error, col_error)
-    
-    # 允许 1e-4 的数值误差
     is_valid = max_error < 1e-4
     
     return is_valid, max_error
 
 def ensure_dirs(args):
-    """确保输出目录存在"""
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     if not os.path.exists(args.plot_dir):
         os.makedirs(args.plot_dir)
 
-def plot_convergence(cost_history, instance_name, save_dir):
-    """绘制并保存收敛曲线"""
+def plot_convergence(soft_history, real_history, instance_name, save_dir):
+    """
+    绘制 Soft Cost 和 Real Cost 对比图
+    soft_history: list of float (每一步)
+    real_history: list of (iter, val) (每 log_interval 步)
+    """
     plt.figure(figsize=(10, 6))
-    plt.plot(cost_history, label='Best Cost per Iteration')
-    plt.title(f"Convergence Curve: {instance_name}")
+    
+    # 1. 画 Soft Cost (连续曲线)
+    plt.plot(soft_history, label='Soft Cost (Relaxed)', color='blue', alpha=0.6, linewidth=1)
+    
+    # 2. 画 Real Cost (离散点)
+    if real_history:
+        # 解压 (iteration, value)
+        iters, vals = zip(*real_history)
+        plt.plot(iters, vals, label='Real Cost (Hungarian)', color='red', marker='o', markersize=3, linestyle='--', linewidth=0.8)
+    
+    plt.title(f"Convergence: {instance_name} (Soft vs Real)")
     plt.xlabel("Iteration")
     plt.ylabel("Cost")
-    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.grid(True, linestyle='--', alpha=0.5)
     plt.legend()
     
-    # 保存图片
     save_path = os.path.join(save_dir, f"{instance_name}.png")
     plt.savefig(save_path)
-    plt.close() # 关闭画布，防止内存泄漏
+    plt.close()
 
 def run_single_instance(dat_path, soln_dir, args, device):
     filename = os.path.basename(dat_path)
@@ -85,22 +87,30 @@ def run_single_instance(dat_path, soln_dir, args, device):
     print(f"\n{'='*60}")
     print(f"Processing: {filename}")
     
-    # 1. 解析数据
     try:
         n, A, B = parse_qap_dat(dat_path)
     except Exception as e:
         print(f"[Error] Failed to parse data: {e}")
         return None
 
-    # 2. 解析解文件
     sin_path = os.path.join(soln_dir, f"{instance_name}.sln")
     opt_val, opt_perm_vec = parse_qap_solution(sin_path)
 
-    # 3. 运行求解
-    # solver = SK_QAP_Solver(n, A, B, device=device, tau=args.tau, batch_size=args.batch_size)
-    solver = ALM_QAP_Solver(n, A, B, device=device, rho=10.0, batch_size=args.batch_size) # 注意参数变化
+    log_file_path = os.path.join(args.output_dir, f"{instance_name}_log.txt")
+    print(f"[System] Logging details to: {log_file_path}")
+    
+    solver = SK_QAP_Solver(n, A, B, device=device, batch_size=args.batch_size)
+    
     start_t = time.time()
-    best_cost, best_perm_matrix, cost_history = solver.solve(max_iter=args.iter, lr_dual=args.lr_dual)
+    
+    # === 核心修改：接收 4 个返回值 ===
+    best_cost, best_perm_matrix, soft_hist, real_hist = solver.solve(
+        max_iter=args.iter, 
+        lr_dual=args.lr_dual, 
+        log_interval=100,      
+        log_path=log_file_path 
+    )
+    
     end_t = time.time()
     elapsed = end_t - start_t
 
@@ -108,29 +118,31 @@ def run_single_instance(dat_path, soln_dir, args, device):
     if not is_feasible:
         print(f"[WARNING] Solution violates constraints! Max Error: {constr_error:.6f}")
     
-    # === 新增：绘制折线图 ===
-    if cost_history is not None and len(cost_history) > 0:
-        plot_convergence(cost_history, instance_name, args.plot_dir)
+    # === 修改：传入两个 history 进行绘图 ===
+    if soft_hist:
+        plot_convergence(soft_hist, real_hist, instance_name, args.plot_dir)
         print(f"-> Plot saved to {args.plot_dir}/{instance_name}.png")
 
-    # 4. 结果比对逻辑
+    # 结果统计
     gap = 0.0
     is_optimal_cost = False
     perm_match = "N/A"
     
     if opt_val is not None:
-        gap = (best_cost - opt_val) / abs(opt_val) * 100
-        if abs(best_cost - opt_val) < 1e-4:
-            is_optimal_cost = True
+        if abs(opt_val) < 1e-9: 
+            if abs(best_cost - opt_val) < 1e-4: gap = 0.0
+            else: gap = float('inf') 
+        else:
+            gap = (best_cost - opt_val) / abs(opt_val) * 100
+
+        if abs(best_cost - opt_val) < 1e-4: is_optimal_cost = True
+            
         if opt_perm_vec is not None and len(opt_perm_vec) == n:
             my_perm_mat = best_perm_matrix.cpu().numpy()
             my_perm_vec = np.argmax(my_perm_mat, axis=1)
-            if np.array_equal(my_perm_vec, opt_perm_vec):
-                perm_match = "YES"
-            else:
-                perm_match = "NO" 
+            if np.array_equal(my_perm_vec, opt_perm_vec): perm_match = "YES"
+            else: perm_match = "NO"
     
-    status_str = "OPTIMAL" if is_optimal_cost else f"Gap {gap:.2f}%"
     feas_str = "OK" if is_feasible else "FAIL"
     print(f"-> Found: {best_cost:.2f} | Opt: {opt_val if opt_val else 'N/A'} | Feas: {feas_str}")
     
@@ -141,18 +153,18 @@ def run_single_instance(dat_path, soln_dir, args, device):
         "OptCost": float(opt_val) if opt_val else None,
         "Gap(%)": float(gap) if opt_val else None,
         "PermMatch": perm_match,
-        "Feasible": is_feasible,      # 新增字段
-        "MaxVio": float(constr_error), # 新增字段：最大违背量
+        "Feasible": is_feasible,
+        "MaxVio": float(constr_error),
         "Time(s)": float(elapsed)
     }
 
 def main():
     args = Config()
-    ensure_dirs(args) # 创建文件夹
+    ensure_dirs(args)
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"[System] Using device: {device}")
-    print(f"[System] Results will be saved to: {os.path.abspath(args.output_dir)}")
+    print(f"[System] Results will be saved to: {args.base_result_dir}")
 
     if not os.path.exists(args.data_dir):
         print(f"[Error] Data directory '{args.data_dir}' not found.")
@@ -160,38 +172,34 @@ def main():
 
     all_files = [f for f in os.listdir(args.data_dir) if f.endswith('.dat')]
     all_files.sort()
-    target_files = all_files[:args.limit]
+    target_files = all_files[:1]
     
     results = []
 
     for idx, filename in enumerate(target_files):
         dat_path = os.path.join(args.data_dir, filename)
-        # 传入 args 以获取 plot_dir
         res = run_single_instance(dat_path, args.soln_dir, args, device)
         if res:
             results.append(res)
 
-    # 5. 输出汇总表格 (终端打印)
     print("\n" + "="*85)
     print("FINAL BENCHMARK SUMMARY")
     print("="*85)
     
-    # 使用 Pandas 打印漂亮的表格
     df = pd.DataFrame(results)
     
-    # 处理一下显示格式（将 None 替换为 NaN 或其他）
     if not df.empty:
-        # 打印到终端
-        print(df.to_string(index=False, float_format="%.2f"))
-        
-        # 计算平均 Gap
         if 'Gap(%)' in df.columns and df['Gap(%)'].notna().any():
-            avg_gap = df['Gap(%)'].abs().mean()
-            print("-" * 85)
+            avg_gap = df['Gap(%)'].replace([np.inf, -np.inf], np.nan).dropna().abs().mean()
             print(f"Average Optimality Gap: {avg_gap :.2f}%")
+            print("-" * 85)
 
-        # === 新增：导出到 Excel ===
-        excel_path = os.path.join(args.output_dir, 'ALM_benchmark_summary.xlsx')
+        cols = ['Instance', 'Size', 'MyCost', 'OptCost', 'Gap(%)', 'MaxVio', 'PermMatch', 'Time(s)']
+        final_cols = [c for c in cols if c in df.columns]
+        
+        print(df[final_cols].to_string(index=False, float_format="%.2f"))
+
+        excel_path = os.path.join(args.output_dir, 'SK_benchmark_summary.xlsx')
         try:
             df.to_excel(excel_path, index=False, sheet_name='Benchmark')
             print(f"\n[Success] Excel report saved to: {excel_path}")
@@ -199,13 +207,6 @@ def main():
             print(f"\n[Error] Could not save Excel file: {e}")
     else:
         print("No results to show.")
-
-    if not df.empty:
-        # 调整列顺序，把 Feasible 加上
-        cols = ['Instance', 'Size', 'MyCost', 'OptCost', 'Gap(%)', 'Feasible', 'PermMatch', 'Time(s)']
-        # 仅保留存在的列
-        final_cols = [c for c in cols if c in df.columns]
-        print(df[final_cols].to_string(index=False, float_format="%.2f"))
 
 if __name__ == "__main__":
     main()
