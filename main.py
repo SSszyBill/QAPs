@@ -182,7 +182,6 @@ def main():
     all_files = [f for f in os.listdir(args.data_dir) if f.endswith('.dat')]
     all_files.sort()
     
-    # 这里的切片可以控制跑多少个实例，例如 [:5] 跑前5个
     target_filename = 'nug12.dat'  # 要筛选的文件名
     if target_filename in all_files:
         target_files = [target_filename]  # 只保留这个文件
