@@ -90,8 +90,8 @@ class GurobiQAPSolver:
 
 def main():
     # === 配置路径 ===
-    data_dir = "/home/opt/szy/QAP/QAPs/qaplibs/qapdata"
-    soln_dir = "/home/opt/szy/QAP/QAPs/qaplibs/qapsoln"
+    data_dir = "./qaplibs/qapdata"
+    soln_dir = "./qaplibs/qapsoln"
     output_file = "Gurobi_QAP_Benchmark.xlsx"
     
     # === 设置 ===
@@ -106,9 +106,10 @@ def main():
     # 示例：只跑文件名包含 'tai' 的前 3 个小规模算例用于测试
     # target_files = [f for f in all_files if 'tai' in f][:3]
     # 如果要跑所有文件：
-    target_filename = 'nug12.dat'  # 要筛选的文件名
-    if target_filename in all_files:
-        target_files = [target_filename]  # 只保留这个文件
+    # target_filename = 'nug12.dat'  # 要筛选的文件名
+    # if target_filename in all_files:
+    #     target_files = [target_filename]  # 只保留这个文件
+    target_files = all_files  # 跑所有文件
     results_list = []
 
     print(f"Found {len(target_files)} instances. Starting benchmark...")
@@ -137,7 +138,7 @@ def main():
         opt_val_known, opt_perm_known = parse_qap_solution(soln_path)
 
         # 3. Gurobi 求解
-        solver = GurobiQAPSolver(n, A, B, time_limit=600, verbose=False)
+        solver = GurobiQAPSolver(n, A, B, time_limit=300, verbose=False)
         res = solver.solve()
 
         # 4. 计算指标
