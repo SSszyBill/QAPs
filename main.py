@@ -182,11 +182,11 @@ def main():
     all_files = [f for f in os.listdir(args.data_dir) if f.endswith('.dat')]
     all_files.sort()
     
-    target_filename = 'nug12.dat'  # 要筛选的文件名
-    if target_filename in all_files:
-        target_files = [target_filename]  # 只保留这个文件
+    # target_filename = 'nug12.dat'  # 要筛选的文件名
+    # if target_filename in all_files:
+    #     target_files = [target_filename]  # 只保留这个文件
     
-    # target_files = all_files[:1] 
+    target_files = all_files[6:20] 
     
     results = []
 
@@ -214,12 +214,12 @@ def main():
         # Pandas 展示需要 CPU 数据，我们在 run_single_instance 中已经转好 float 了
         print(df[final_cols].to_string(index=False, float_format="%.2f"))
 
-        excel_path = os.path.join(args.output_dir, 'SK_benchmark_summary.xlsx')
-        try:
-            df.to_excel(excel_path, index=False, sheet_name='Benchmark')
-            print(f"\n[Success] Excel report saved to: {excel_path}")
-        except Exception as e:
-            print(f"\n[Error] Could not save Excel file: {e}")
+        # excel_path = os.path.join(args.output_dir, 'SK_benchmark_summary.xlsx')
+        # try:
+        #     df.to_excel(excel_path, index=False, sheet_name='Benchmark')
+        #     print(f"\n[Success] Excel report saved to: {excel_path}")
+        # except Exception as e:
+        #     print(f"\n[Error] Could not save Excel file: {e}")
     else:
         print("No results to show.")
 

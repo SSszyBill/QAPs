@@ -39,7 +39,7 @@ class SK_QAP_Solver(nn.Module):
         - 若某行/列和与1的差距>判定阈值(0.1)，打印提示并标注行号/列号
         """
         # 统一阈值：和判定不合格的阈值对齐（可根据需要调整）
-        ERROR_THRESHOLD = 0.25  
+        ERROR_THRESHOLD = 1e-2  
         has_large_error = False
         
         if P.dim() == 2:
@@ -47,27 +47,23 @@ class SK_QAP_Solver(nn.Module):
             n = P.shape[0]
             row_sum = P.sum(dim=1)  # 每行求和 → [n]
             col_sum = P.sum(dim=0)  # 每列求和 → [n]
-            
             # 检查行和
             for row_idx in range(n):
                 row_diff = abs(row_sum[row_idx].item() - 1.0)
                 if row_diff > ERROR_THRESHOLD:
                     has_large_error = True
                     print(f"⚠️ P (2维) 行{row_idx} 和为 {row_sum[row_idx].item():.6f},与1的差距 {row_diff:.6f} > {ERROR_THRESHOLD} → 不满足双随机")
-            
             # 检查列和
             for col_idx in range(n):
                 col_diff = abs(col_sum[col_idx].item() - 1.0)
                 if col_diff > ERROR_THRESHOLD:
                     has_large_error = True
                     print(f"⚠️ P (2维) 列{col_idx} 和为 {col_sum[col_idx].item():.6f},与1的差距 {col_diff:.6f} > {ERROR_THRESHOLD} → 不满足双随机")
-        
         elif P.dim() == 3:
             # 3维情况：P shape [batch_size, n, n]
             batch_size, n = P.shape[0], P.shape[1]
             row_sum = P.sum(dim=2)  # 每个样本的每行求和 → [batch_size, n]
             col_sum = P.sum(dim=1)  # 每个样本的每列求和 → [batch_size, n]
-            
             # 检查行和（遍历每个batch + 每行）
             for batch_idx in range(batch_size):
                 for row_idx in range(n):
@@ -83,7 +79,6 @@ class SK_QAP_Solver(nn.Module):
                     if col_diff > ERROR_THRESHOLD:
                         has_large_error = True
                         print(f"⚠️ P (3维) batch{batch_idx} 列{col_idx} 和为 {col_sum[batch_idx, col_idx].item():.6f}，与1的差距 {col_diff:.6f} > {ERROR_THRESHOLD} → 不满足双随机")
-        
         else:
             raise ValueError(f"不支持的P维度:{P.dim()},仅支持2维/3维")
         
@@ -91,11 +86,11 @@ class SK_QAP_Solver(nn.Module):
         row_error = torch.max(torch.abs(row_sum - 1.0)).item()
         col_error = torch.max(torch.abs(col_sum - 1.0)).item()
         max_error = max(row_error, col_error)
-        is_valid = max_error < 0.25  # 判定不合格的核心阈值
+        is_valid = max_error < ERROR_THRESHOLD # 判定不合格的核心阈值
         
         # 若存在超标情况，补充全局提示
         if has_large_error:
-            print(f"❌ 全局最大误差: {max_error:.6f},P 不是双随机矩阵(判定阈值:0.25)")
+            print(f"❌ 全局最大误差: {max_error:.6f},P 不是双随机矩阵(判定阈值:{ERROR_THRESHOLD})")
         return is_valid, max_error
     
     def solve(self, max_iter, lr_dual=0.5, log_interval=100, log_path=None):
@@ -109,7 +104,7 @@ class SK_QAP_Solver(nn.Module):
         # 格式说明: 
         # :<8  左对齐，占8格
         # :<12 左对齐，占12格
-        header = f"{'Iter':<8} | {'SoftCost':<12} | {'RealCost':<12} | {'Vio(Bin)':<12} | {'Grad|Z|':<12} | {'Loss_pdbo':<12} | {'y':<12}"
+        header = f"{'Iter':<8} | {'SoftCost':<12} | {'RealCost':<12} | {'Vio(Bin)':<12} | {'Grad|Z|':<12} | {'Loss_pdbo':<12} | {'y':<12} | {'y_min':<12}" 
         
         if log_path:
             with open(log_path, 'w') as f:
@@ -123,14 +118,17 @@ class SK_QAP_Solver(nn.Module):
         for t in range(max_iter):
             self.optimizer.zero_grad()
             # === 2. 核心逻辑 ===            
-            z_sigmod = torch.sigmoid(self.Z)
+            z_sigmod = torch.clamp(self.Z, min=1e-8)
             P = self.knight_sinkhorn_step(z_sigmod)
             is_valid, max_error = self.check_sinkhorn(P)
             if not is_valid:
                 print(f"Iteration {t}: Sinkhorn failed to produce double stochastic matrix (max error: {max_error:.6f}). Stopping early.")  
-                break  
+                break
+            if torch.any(P < 0.0):
+                print(f"Iteration {t}: P has negative values. Stopping early.")
+                break
             # === 3. 计算 Loss ===
-            P = torch.clamp(P, 1e-8, 1.0)
+            # P = torch.clamp(P, 1e-8, 1.0)
             term1 = torch.matmul(self.A, P)       
             term2 = torch.matmul(self.B, P.t()) 
             prod = torch.matmul(term1, term2.t())
@@ -175,18 +173,20 @@ class SK_QAP_Solver(nn.Module):
                 vio = g_val.abs().mean().item()
                 
                 # 格式化打印 (注意宽度要和 header 一致)
-                log_str = f"{t:<8} | {current_soft_cost:<12.2f} | {real_cost:<12.2f} | {vio:<12.4f} | {grad_norm:<12.4f} | {loss_pdbo.item():<12.2f} | {self.Y.mean().item():<12.4f}"
+                log_str = f"{t:<8} | {current_soft_cost:<12.2f} | {real_cost:<12.2f} | {vio:<12.4f} | {grad_norm:<12.4f} | {loss_pdbo.item():<12.2f} | {self.Y.mean().item():<12.4f} | {self.Y.min().item():<12.4f}"
                 print(log_str)
                 
                 if log_path:
                     with open(log_path, 'a') as f:
                         f.write(log_str + "\n")
-                # if t == max_iter - 1:
-                #     print(t,"\n")
-                #     print(P,"\n")
-                #     print(self.evaluate_single(P),"\n")
-                #     check, err = self.check_sinkhorn(P)
-                #     print(f"Final Check - Is Double Stochastic: {check}, Max Error: {err:.6f}")
+                if t == max_iter - 1:
+                    print(t,"\n")
+                    row_sum = P.sum(dim=1) 
+                    col_sum = P.sum(dim=0)
+                    row_error = torch.max(torch.abs(row_sum - 1.0)).item()
+                    col_error = torch.max(torch.abs(col_sum - 1.0)).item()
+                    print(f"Final Check - Max Row Error: {row_error:.6f}, Max Col Error: {col_error:.6f}")
+
         # 返回两个 history
         return global_best_score, global_best_perm, soft_cost_history, real_cost_history
 
