@@ -182,11 +182,11 @@ def main():
     all_files = [f for f in os.listdir(args.data_dir) if f.endswith('.dat')]
     all_files.sort()
     
-    # target_filename = 'nug12.dat'  # 要筛选的文件名
-    # if target_filename in all_files:
-    #     target_files = [target_filename]  # 只保留这个文件
+    target_filename = 'esc16c.dat'  # 要筛选的文件名
+    if target_filename in all_files:
+        target_files = [target_filename]  # 只保留这个文件
     
-    target_files = all_files[6:20] 
+    # target_files = all_files[25:] 
     
     results = []
 

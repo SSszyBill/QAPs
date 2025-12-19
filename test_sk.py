@@ -5,12 +5,10 @@ import numpy as np
 class TestSK:
     def __init__(self, n, A, B, z, device='cuda' if torch.cuda.is_available() else 'cpu'):
         self.n = n
-        self.A = A
-        self.B = B
         self.z = z
         self.device = device
     def test_sk (self):
-        solver = SK_QAP_Solver(self.n, self.A, self.B, device=self.device)
+        solver = SK_QAP_Solver(self.n, device=self.device)
         z_sk = solver.knight_sinkhorn_step(self.z, n_iter=100)
         return z_sk
     def check_sk(self, P):
@@ -57,15 +55,13 @@ class TestSK:
 
 if __name__ == "__main__":
     n = 26
-    A = np.random.rand(n, n)
-    B = np.random.rand(n, n)
     z = torch.rand(size=(n, n)) + 1e-8
     print(z)
     if torch.any(z < 0):
         print("Initial z has negative values!")
     if torch.any(z > 1):
         print("Initial z has values greater than 1!")
-    tester = TestSK(n, A, B, z)
+    tester = TestSK(n, z)
     P_sk = tester.test_sk()
     is_valid, max_error = tester.check_sk(P_sk)
     if is_valid:
