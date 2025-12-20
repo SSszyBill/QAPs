@@ -100,14 +100,18 @@ def dykstra_proj_np(M, max_iter=100, tol=1e-5):
     p = np.zeros_like(M)
     q = np.zeros_like(M)
     
+    n = float(M.shape[0])
+    
     for k in range(max_iter):
         X_prev = X.copy()
-        
-        # Project onto affine subspace (row/col sums = 1)
+
         Y = X + p
-        for _ in range(2):
-            Y -= (Y.sum(axis=1, keepdims=True) - 1.0) / Y.shape[1]
-            Y -= (Y.sum(axis=0, keepdims=True) - 1.0) / Y.shape[0]
+
+        row_diff = (np.sum(Y, axis=1, keepdims=True) - 1.0) / n
+        col_diff = (np.sum(Y, axis=0, keepdims=True) - 1.0) / n
+        grand_diff = np.sum(row_diff) / n
+        Y = Y - row_diff - col_diff + grand_diff
+        
         p = X + p - Y
         X = Y
         
