@@ -10,7 +10,7 @@ import triton.language as tl
 def rmsprop_batch_jit(X: torch.Tensor, 
                       grad: torch.Tensor, 
                       v: torch.Tensor, 
-                      buffer: torch.Tensor, 
+                      m: torch.Tensor, 
                       gamma: float, 
                       alpha: float, 
                       lam: float, 
@@ -29,12 +29,12 @@ def rmsprop_batch_jit(X: torch.Tensor,
     
     # 4. Update Step
     if mu > 0.0:
-        buffer = mu * buffer + grad / denom
-        X = X - gamma * buffer
+        m = mu * m + grad / denom
+        X = X - gamma * m
     else:
         X = X - gamma * grad / denom
         
-    return X, v, buffer
+    return X, v, m
 
 
 @torch.jit.script
@@ -48,43 +48,27 @@ def adam_torch(X: torch.Tensor,
                beta2: float = 0.999, 
                lam: float = 0.0, 
                eps: float = 1e-8) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """
-    JIT-compiled Adam Optimizer for PyTorch.
-    Supports arbitrary batch dimensions in X and grad.
-    """
-    # --- 1. Initialization ---
-    # Handle None inputs for JIT compatibility
     if v is None:
         v = torch.zeros_like(X)
     if m is None:
         m = torch.zeros_like(X)
         
-    # --- 2. L2 Regularization (Coupled) ---
     if lam != 0.0:
         grad = grad + lam * X
         
-    # --- 3. Update Moments ---
-    # First Moment (Momentum): m = beta1 * m + (1 - beta1) * grad
     m = beta1 * m + (1.0 - beta1) * grad
     
-    # Second Moment (Variance): v = beta2 * v + (1 - beta2) * grad^2
     v = beta2 * v + (1.0 - beta2) * (grad * grad)
     
-    # --- 4. Bias Correction ---
-    # t is an integer, so we use pow() for scalar exponentiation
-    # These scalars broadcast automatically across the batch
     bias_correction1 = 1.0 - (beta1 ** t)
     bias_correction2 = 1.0 - (beta2 ** t)
     
     m_hat = m / bias_correction1
     v_hat = v / bias_correction2
     
-    # --- 5. Update ---
-    # X -= gamma * m_hat / (sqrt(v_hat) + eps)
     denom = torch.sqrt(v_hat) + eps
     step = gamma * (m_hat / denom)
     
-    # In-place update for efficiency
     X = X - step
     
     return X, v, m
@@ -103,12 +87,6 @@ def dykstra_proj_batch_jit(M: torch.Tensor, max_iter: int = 20) -> torch.Tensor:
         # --- Project onto affine subspace (Row/Col Sums = 1) ---
         Y = X + p
         
-        # # mannually unroll 2 iterations for jit acceleration
-        # Y = Y - (Y.sum(dim=2, keepdim=True) - 1.0) / n
-        # Y = Y - (Y.sum(dim=1, keepdim=True) - 1.0) / n
-
-        # Y = Y - (Y.sum(dim=2, keepdim=True) - 1.0) / n
-        # Y = Y - (Y.sum(dim=1, keepdim=True) - 1.0) / n
         # 计算行和与列和的残差 (Sum - 1)
         # row_diff: (bs, n, 1)
         row_diff = Y.sum(dim=2, keepdim=True) - 1.0
@@ -120,13 +98,12 @@ def dykstra_proj_batch_jit(M: torch.Tensor, max_iter: int = 20) -> torch.Tensor:
         
         # 解析解公式：
         # Y_new = Y - (Row_Diff/n) - (Col_Diff/n) + (Grand_Diff/n^2)
-        # 这一步是纯矩阵加减法，完全并行
         Y = Y - (row_diff / n_float) - (col_diff / n_float) + (grand_diff / (n_float * n_float))
         
         p = X + p - Y
         X = Y
         
-        # --- Project onto non-negative orthant (X >= 0) ---
+        # Project onto non-negative orthant
         Y = X + q
         X = torch.clamp(Y, min=0.0)
         q = Y - X
@@ -144,19 +121,14 @@ def greedy_round_large_batch(M):
     batch_indices = torch.arange(bs, device=M.device)
     
     for _ in range(n):
-        # 1. 找到每个 batch 中当前最大的元素
-        # view(bs, -1) 将矩阵展平为向量
         flat_M = M_temp.view(bs, -1)
         _, idx = flat_M.max(dim=1) # (bs,)
         
-        # 2. 还原为行列索引
         rows = idx.div(n, rounding_mode='floor')
         cols = idx % n
         
-        # 3. 填充结果
         assignment[batch_indices, rows, cols] = 1.0
         
-        # 4. Mask (设为极小值)
         M_temp[batch_indices, rows, :] = -1e10
         M_temp[batch_indices, :, cols] = -1e10
         
@@ -281,47 +253,26 @@ def obj_fn_batch(F, D, X):
     """
     trace(F * X * D.T * X.T)
     """
-    # # X @ D.T @ X.T
-    # tmp = torch.matmul(torch.matmul(X, D.t()), X.transpose(1, 2))
-    # # trace(F @ tmp) = sum(F * tmp.T) element-wise
-    # # trace(A B) = sum(A * B^T)
-    # F_batch = F.unsqueeze(0) # (1, n, n)
-    # prod = torch.matmul(F_batch, tmp) # (bs, n, n)
-    
-    # obj = prod.diagonal(offset=0, dim1=-2, dim2=-1).sum(dim=-1) # (bs,)
-    
-    # return obj
     return torch.einsum('ij,bjk,lk,bil->b', F, X, D, X)
-
-# ==========================================
-# 3. 主求解流程
-# ==========================================
 
 def solve_torch_batch(instance, optimizer="adam",
                       batch_size=100, dual_init=10, 
                       gamma=0.01, beta=0.01, num_iters=1000, 
-                      device='cuda'):
+                      device='cuda', dtype=torch.float64):
     
-    # 1. 读取数据 (CPU)
     n, F_np, D_np, obj_label, x_label = read_instance(instance)
     
-    x_label = torch.tensor(x_label[np.newaxis, :, :], dtype=torch.float64, device=device)
-    
-    # 2. 转为 GPU Tensor (Float64)
-    dtype = torch.float64 
+    x_label = torch.tensor(x_label[np.newaxis, :, :], dtype=dtype, device=device)
     
     F = torch.tensor(F_np, device=device, dtype=dtype)
     D = torch.tensor(D_np, device=device, dtype=dtype)
-
     
-    # 3. 初始化
-    # 随机初始化 X
     X = torch.rand((batch_size, n, n), device=device, dtype=dtype)
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
     
-    # RMSProp 状态
+    # optimizer 状态
     v = torch.zeros_like(X)
-    buffer = torch.zeros_like(X)
+    m = torch.zeros_like(X)
     
     # incumbent
     incumbent_obj = float('inf')
@@ -330,37 +281,33 @@ def solve_torch_batch(instance, optimizer="adam",
     print(f"Start solving {instance} with Batch Size={batch_size}, Device={device}, Dtype={dtype}")
     
     for it in range(num_iters):
-        # --- Gradient & Update ---
+        # gradient steps
         grad_X = grad_L_X_batch(F, D, X, Y) # (bs, n, n)
         grad_Y = grad_L_Y_batch(X)
         
         if optimizer == "rmsprop":
-            X, v, buffer = rmsprop_batch_jit(X, grad_X, v, buffer, gamma=gamma, 
+            X, v, m = rmsprop_batch_jit(X, grad_X, v, m, gamma=gamma, 
                                              alpha=0.99, lam=0.98, mu=0.91, eps=1e-8)
         elif optimizer == "adam":
-            X, v, buffer = adam_torch(X, grad_X, v, buffer, t=it+1, gamma=gamma)
+            X, v, m = adam_torch(X, grad_X, v, m, t=it+1, gamma=gamma)
         else:
             raise ValueError(f"Unknown optimizer: {optimizer}")
         
         Y -= beta * grad_Y
         
-        # --- Projection ---
+        # projection
         X = dykstra_proj_batch_jit(X, max_iter=20) 
         
-        # --- Rounding & Evaluation ---
+        
+        # rounding and evaluation
         X_int = greedy_round_batch(X)
         obj_vals = obj_fn_batch(F, D, X_int) # (bs,)
         
-        # find the best in the batch
-        min_obj_batch, min_idx = torch.min(obj_vals, dim=0)
-        
         # update incumbent        
+        min_obj_batch, min_idx = torch.min(obj_vals, dim=0)
         if min_obj_batch < incumbent_obj:
             incumbent_obj = min_obj_batch.item()
             incumbent_X = X_int[min_idx].clone()
-            
-            # row_sum = incumbent_X.sum(dim=1).mean().item()
-            # print(f"Iter {it}: New Best {incumbent_obj:.4f}")
 
         if (it+1) % 1000 == 0:
             penalty = (X * X - X).mean(dim=(1,2)).mean().item()
@@ -404,7 +351,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--iters', type=int, default=2000)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--optimizer', type=str, default="adam", choices=["rmsprop", "adam"])
+    parser.add_argument('--optimizer', type=str, default="rmsprop", choices=["rmsprop", "adam"])
     
     args = parser.parse_args()
     
