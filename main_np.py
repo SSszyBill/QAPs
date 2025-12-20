@@ -71,31 +71,21 @@ def rmsprop_np(X, grad, v=None, buffer=None,
 
 def adam_np(X, grad, v=None, m=None, t=1, 
             gamma=0.001, beta1=0.9, beta2=0.999, lam=0.0, eps=1e-8):
-    # --- 1. Initialization ---
     if v is None:
         v = np.zeros_like(X)
     if m is None:
         m = np.zeros_like(X)
     
-    # --- 2. L2 Regularization (Coupled) ---
-    # Matches the style of your provided snippet
     if lam != 0:
         grad = grad + lam * X
         
-    # --- 3. Update Moments ---
-    # First Moment (Momentum)
     m = beta1 * m + (1 - beta1) * grad
     
-    # Second Moment (Variance)
     v = beta2 * v + (1 - beta2) * (grad ** 2)
     
-    # --- 4. Bias Correction ---
-    # Corrects the "cold start" problem where m and v start as zeros
     m_hat = m / (1 - beta1 ** t)
     v_hat = v / (1 - beta2 ** t)
     
-    # --- 5. Update ---
-    # Standard Adam update: Momentum / sqrt(Variance)
     X -= gamma * m_hat / (np.sqrt(v_hat) + eps)
     
     return X, v, m
@@ -184,7 +174,7 @@ def greedy_round_np(M):
     return assignment
 
 
-def solve_np(instance, optimizer="adam", dual_init=10.0, gamma=0.01, beta=0.01, num_iters=1000):
+def solve_np(instance, optimizer="adam", dual_init=10.0, gamma=0.01, beta=0.01, num_iters=1000, wandb=False):
     n, F_np, D_np, obj_label, x_label_np = read_instance(instance)
     
     X = np.random.rand(n, n)
@@ -196,31 +186,34 @@ def solve_np(instance, optimizer="adam", dual_init=10.0, gamma=0.01, beta=0.01, 
     incumbent_X = None
     
     integrity_penalty = []
+    
+    if wandb:
+        import wandb
+        wandb.init(project="QAP_solver", name=f"{instance}_np_{optimizer}")
+        wandb.config.update({
+            "instance": instance,
+            "optimizer": optimizer,
+            "dual_init": dual_init,
+            "gamma": gamma,
+            "beta": beta,
+            "num_iters": num_iters
+        })
+        
     for it in range(num_iters):
         grad_X = grad_L_X_np(F_np, D_np, X, Y)
         grad_Y = grad_L_Y_np(X)
         
-        # # check the gradient norms
-        # # clip the gradients to avoid explosion
-        # grad_norm = np.linalg.norm(grad_X)
-        # grad_X = np.clip(grad_X, -1e5, 1e5)
         if optimizer == "adam":
             X, v, buffer = adam_np(X, grad_X, v, buffer, t=it+1, gamma=gamma)
         elif optimizer == "rmsprop":
             X, v, buffer = rmsprop_np(X, grad_X, v, buffer, gamma=gamma)
         else:
             raise ValueError(f"Unknown optimizer: {optimizer}")
-        # step = gamma * grad_X
-        # X -= step
-        # X -= (gamma * grad_X)
-        # np.add(X, grad_X * (-gamma), out=X)
+
         np.add(Y, grad_Y * beta, out=Y)
         
         X = dykstra_proj_np(X)
-        integrality_penalty = -np.sum(X * X - X)
-
-        if it % 1000 == 0:
-            integrity_penalty.append(integrality_penalty)
+        integrality_penalty = np.abs(np.sum(X * X - X))
         
         X_int = greedy_round_np(X)
         obj_int = obj_fn_np(F_np, D_np, X_int)
@@ -236,15 +229,16 @@ def solve_np(instance, optimizer="adam", dual_init=10.0, gamma=0.01, beta=0.01, 
                 print("Warning: Obtained solution is not a valid permutation matrix.")
     
         if it % 100 == 0:
-            # print(f"Iter {it}, Incumbent obj: {incumbent_obj}, obj: {obj_fn_np(F_np, D_np, X)}, Integrality penalty: {integrality_penalty}, Y mean: {Y.min()}, X row sum mean: {X.sum(axis=1)}, X col sum mean: {X.sum(axis=0)}")
             print(f"Iter {it}, Incumbent obj: {incumbent_obj}, obj: {obj_fn_np(F_np, D_np, X)}, Integrality penalty: {integrality_penalty}, Y mean: {Y.min()}")
-        if it % 10000 == 0 and it > 0:
-            # plot integrity penalty
-            plt.plot(integrity_penalty)
-            plt.xlabel("Iteration")
-            plt.ylabel("Integrality Penalty")
-            plt.title("Integrality Penalty over Iterations")
-            plt.savefig(f"integrity_penalty_{instance}_{it}.png")
+
+        # log to wandb
+        if wandb:
+            wandb.log({
+                "iteration": it,
+                "objective": obj_fn_np(F_np, D_np, X),
+                "incumbent_objective": incumbent_obj,
+                "integrality_penalty": integrality_penalty,
+            })
         
         if np.abs(integrality_penalty) < 1e-8:
             print(f"Converged with integrality penalty {integrality_penalty} at iteration {it}")
@@ -258,10 +252,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--instance', type=str, default="nug12")
     parser.add_argument('--optimizer', type=str, default="adam", choices=["adam", "rmsprop"])
+    parser.add_argument('--wandb', action='store_true')
     args = parser.parse_args()
     
     start_time = time.time()
-    X, incumbent_obj, obj_label = solve_np(args.instance, args.optimizer, dual_init=10.0, gamma=0.02, beta=0.02, num_iters=100000000)
+    X, incumbent_obj, obj_label = solve_np(args.instance, args.optimizer, dual_init=5.0, gamma=0.02, beta=0.02, num_iters=100000000, wandb=args.wandb)
     end_time = time.time()
     print(f"Solve time: {end_time - start_time} seconds")
     
