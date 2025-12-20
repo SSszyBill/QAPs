@@ -84,20 +84,11 @@ def dykstra_proj_batch_jit(M: torch.Tensor, max_iter: int = 20) -> torch.Tensor:
     n_float = float(n)
     
     for _ in range(max_iter):
-        # --- Project onto affine subspace (Row/Col Sums = 1) ---
         Y = X + p
         
-        # 计算行和与列和的残差 (Sum - 1)
-        # row_diff: (bs, n, 1)
         row_diff = Y.sum(dim=2, keepdim=True) - 1.0
-        # col_diff: (bs, 1, n)
         col_diff = Y.sum(dim=1, keepdim=True) - 1.0
-        # grand_diff: (bs, 1, 1) - 全局和的残差
-        # 注意：全局修正项是为了平衡行和列同时减去的部分
         grand_diff = row_diff.sum(dim=1, keepdim=True) 
-        
-        # 解析解公式：
-        # Y_new = Y - (Row_Diff/n) - (Col_Diff/n) + (Grand_Diff/n^2)
         Y = Y - (row_diff / n_float) - (col_diff / n_float) + (grand_diff / (n_float * n_float))
         
         p = X + p - Y
