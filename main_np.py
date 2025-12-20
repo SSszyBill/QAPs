@@ -207,6 +207,8 @@ def solve_np(instance, optimizer="adam", dual_init=10.0, gamma=0.01, beta=0.01, 
             X, v, buffer = adam_np(X, grad_X, v, buffer, t=it+1, gamma=gamma)
         elif optimizer == "rmsprop":
             X, v, buffer = rmsprop_np(X, grad_X, v, buffer, gamma=gamma)
+        elif optimizer == "gd":
+            np.add(X, -gamma * grad_X, out=X)
         else:
             raise ValueError(f"Unknown optimizer: {optimizer}")
 
@@ -251,7 +253,7 @@ def solve_np(instance, optimizer="adam", dual_init=10.0, gamma=0.01, beta=0.01, 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--instance', type=str, default="nug12")
-    parser.add_argument('--optimizer', type=str, default="adam", choices=["adam", "rmsprop"])
+    parser.add_argument('--optimizer', type=str, default="adam", choices=["adam", "rmsprop", "gd"])
     parser.add_argument('--wandb', action='store_true')
     args = parser.parse_args()
     
