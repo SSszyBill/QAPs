@@ -3,6 +3,8 @@ import argparse
 import numpy as np
 import time
 from typing import Tuple, Optional
+import triton
+import triton.language as tl
 
 @torch.jit.script
 def rmsprop_batch_jit(X: torch.Tensor, 
@@ -34,6 +36,59 @@ def rmsprop_batch_jit(X: torch.Tensor,
         
     return X, v, buffer
 
+
+@torch.jit.script
+def adam_torch(X: torch.Tensor, 
+               grad: torch.Tensor, 
+               v: Optional[torch.Tensor] = None, 
+               m: Optional[torch.Tensor] = None, 
+               t: int = 1, 
+               gamma: float = 0.001, 
+               beta1: float = 0.9, 
+               beta2: float = 0.999, 
+               lam: float = 0.0, 
+               eps: float = 1e-8) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    JIT-compiled Adam Optimizer for PyTorch.
+    Supports arbitrary batch dimensions in X and grad.
+    """
+    # --- 1. Initialization ---
+    # Handle None inputs for JIT compatibility
+    if v is None:
+        v = torch.zeros_like(X)
+    if m is None:
+        m = torch.zeros_like(X)
+        
+    # --- 2. L2 Regularization (Coupled) ---
+    if lam != 0.0:
+        grad = grad + lam * X
+        
+    # --- 3. Update Moments ---
+    # First Moment (Momentum): m = beta1 * m + (1 - beta1) * grad
+    m = beta1 * m + (1.0 - beta1) * grad
+    
+    # Second Moment (Variance): v = beta2 * v + (1 - beta2) * grad^2
+    v = beta2 * v + (1.0 - beta2) * (grad * grad)
+    
+    # --- 4. Bias Correction ---
+    # t is an integer, so we use pow() for scalar exponentiation
+    # These scalars broadcast automatically across the batch
+    bias_correction1 = 1.0 - (beta1 ** t)
+    bias_correction2 = 1.0 - (beta2 ** t)
+    
+    m_hat = m / bias_correction1
+    v_hat = v / bias_correction2
+    
+    # --- 5. Update ---
+    # X -= gamma * m_hat / (sqrt(v_hat) + eps)
+    denom = torch.sqrt(v_hat) + eps
+    step = gamma * (m_hat / denom)
+    
+    # In-place update for efficiency
+    X = X - step
+    
+    return X, v, m
+
 @torch.jit.script
 def dykstra_proj_batch_jit(M: torch.Tensor, max_iter: int = 20) -> torch.Tensor:
     # X, P, Q: (bs, n, n)
@@ -42,17 +97,31 @@ def dykstra_proj_batch_jit(M: torch.Tensor, max_iter: int = 20) -> torch.Tensor:
     q = torch.zeros_like(M)
     
     n = M.size(1)
+    n_float = float(n)
     
     for _ in range(max_iter):
         # --- Project onto affine subspace (Row/Col Sums = 1) ---
         Y = X + p
         
-        # mannually unroll 2 iterations for jit acceleration
-        Y = Y - (Y.sum(dim=2, keepdim=True) - 1.0) / n
-        Y = Y - (Y.sum(dim=1, keepdim=True) - 1.0) / n
+        # # mannually unroll 2 iterations for jit acceleration
+        # Y = Y - (Y.sum(dim=2, keepdim=True) - 1.0) / n
+        # Y = Y - (Y.sum(dim=1, keepdim=True) - 1.0) / n
 
-        Y = Y - (Y.sum(dim=2, keepdim=True) - 1.0) / n
-        Y = Y - (Y.sum(dim=1, keepdim=True) - 1.0) / n
+        # Y = Y - (Y.sum(dim=2, keepdim=True) - 1.0) / n
+        # Y = Y - (Y.sum(dim=1, keepdim=True) - 1.0) / n
+        # 计算行和与列和的残差 (Sum - 1)
+        # row_diff: (bs, n, 1)
+        row_diff = Y.sum(dim=2, keepdim=True) - 1.0
+        # col_diff: (bs, 1, n)
+        col_diff = Y.sum(dim=1, keepdim=True) - 1.0
+        # grand_diff: (bs, 1, 1) - 全局和的残差
+        # 注意：全局修正项是为了平衡行和列同时减去的部分
+        grand_diff = row_diff.sum(dim=1, keepdim=True) 
+        
+        # 解析解公式：
+        # Y_new = Y - (Row_Diff/n) - (Col_Diff/n) + (Grand_Diff/n^2)
+        # 这一步是纯矩阵加减法，完全并行
+        Y = Y - (row_diff / n_float) - (col_diff / n_float) + (grand_diff / (n_float * n_float))
         
         p = X + p - Y
         X = Y
@@ -64,7 +133,7 @@ def dykstra_proj_batch_jit(M: torch.Tensor, max_iter: int = 20) -> torch.Tensor:
         
     return X
 
-def greedy_round_batch(M):
+def greedy_round_large_batch(M):
     """
     M: (bs, n, n)
     """
@@ -93,6 +162,99 @@ def greedy_round_batch(M):
         
     return assignment
 
+
+@triton.jit
+def greedy_kernel(
+    M_ptr,          # 输入矩阵指针 (BS, N, N)
+    Out_ptr,        # 输出矩阵指针 (BS, N, N)
+    stride_b, stride_h, stride_w,  # M 的 strides
+    N: tl.constexpr, # 矩阵大小
+    BLOCK_SIZE: tl.constexpr # 设置为大于等于 N*N 的最小 2^k
+):
+    # 1. 获取当前程序的 batch ID
+    pid = tl.program_id(0)
+    
+    # 2. 计算当前 Batch 在内存中的起始偏移量
+    # M 和 Out 布局相同
+    m_start_ptr = M_ptr + pid * stride_b
+    out_start_ptr = Out_ptr + pid * stride_b
+    
+    # 3. 加载整个 N*N 矩阵到寄存器/SRAM
+    # Triton 会尝试将其放在最快的存储器中
+    offs = tl.arange(0, BLOCK_SIZE)
+    mask = offs < (N * N)
+    
+    # 加载 M，对于越界部分填充 -inf
+    val = tl.load(m_start_ptr + offs, mask=mask, other=-float('inf'))
+    
+    # 记录被占用的行和列 (位掩码会更高效，但数组更容易实现)
+    # 在寄存器中维护状态：如果 val 被选中，将其设为 -inf
+    
+    # 循环 N 次寻找最大值
+    for _ in range(N):
+        # a. 找到当前剩余元素中的最大值索引
+        # argmax 在 Triton 中稍微复杂，我们先找 max val，再找 index
+        max_val = tl.max(val, axis=0)
+        
+        # b. 找到该最大值对应的 index (第一个匹配的)
+        # 比较 val == max_val，得到布尔向量
+        is_max = (val == max_val)
+        
+        # 将布尔转为索引，取第一个 (argmax)
+        # 这是一个标准的 argmax trick
+        idx = tl.argmax(is_max.to(tl.int32), axis=0) 
+        # 注意：triton 的 argmax 返回的是 index，如果存在多个最大值，它返回第一个
+        
+        # c. 计算 Row 和 Col
+        r = idx // N
+        c = idx % N
+        
+        # d. 写入结果 1.0
+        tl.store(out_start_ptr + idx, 1.0)
+        
+        # e. Masking (核心加速点)
+        # 我们不需要重新写回 Global Memory，直接在寄存器变量 `val` 上修改
+        # 将第 r 行的所有元素设为 -inf
+        # 将第 c 列的所有元素设为 -inf
+        
+        # 构建行掩码和列掩码
+        # offs // N == r  -> 这一行的所有元素
+        # offs % N == c   -> 这一列的所有元素
+        
+        row_mask = (offs // N) == r
+        col_mask = (offs % N) == c
+        combined_mask = row_mask | col_mask
+        
+        # 更新 val: 凡是 mask 命中的地方，更新为 -inf
+        val = tl.where(combined_mask, -float('inf'), val)
+
+def greedy_round_batch(M):
+    bs, n, _ = M.shape
+    
+    if n < 60:
+        assignment = torch.zeros_like(M)
+        
+        # 算出需要的 Block Size (必须是 2 的幂)
+        # 例如 N=12 -> 144 -> Block=256
+        # N=20 -> 400 -> Block=512
+        # N=50 -> 2500 -> Block=4096 (Triton 处理 4K 元素非常轻松)
+        block_size = triton.next_power_of_2(n * n)
+        
+        # 启动 Grid，每个 Batch 一个 Kernel 实例
+        grid = (bs,)
+        
+        greedy_kernel[grid](
+            M, 
+            assignment,
+            M.stride(0), M.stride(1), M.stride(2),
+            N=n,
+            BLOCK_SIZE=block_size
+        )
+    else:
+        assignment = greedy_round_large_batch(M)
+    
+    return assignment
+
 def grad_L_X_batch(F, D, X, Y):
     """
     F X D^T + F^T X D + Y * (2X - 1)
@@ -119,21 +281,24 @@ def obj_fn_batch(F, D, X):
     """
     trace(F * X * D.T * X.T)
     """
-    # X @ D.T @ X.T
-    tmp = torch.matmul(torch.matmul(X, D.t()), X.transpose(1, 2))
-    # trace(F @ tmp) = sum(F * tmp.T) element-wise
-    # trace(A B) = sum(A * B^T)
-    F_batch = F.unsqueeze(0) # (1, n, n)
-    prod = torch.matmul(F_batch, tmp) # (bs, n, n)
+    # # X @ D.T @ X.T
+    # tmp = torch.matmul(torch.matmul(X, D.t()), X.transpose(1, 2))
+    # # trace(F @ tmp) = sum(F * tmp.T) element-wise
+    # # trace(A B) = sum(A * B^T)
+    # F_batch = F.unsqueeze(0) # (1, n, n)
+    # prod = torch.matmul(F_batch, tmp) # (bs, n, n)
     
-    obj = prod.diagonal(offset=0, dim1=-2, dim2=-1).sum(dim=-1) # (bs,)
-    return obj
+    # obj = prod.diagonal(offset=0, dim1=-2, dim2=-1).sum(dim=-1) # (bs,)
+    
+    # return obj
+    return torch.einsum('ij,bjk,lk,bil->b', F, X, D, X)
 
 # ==========================================
 # 3. 主求解流程
 # ==========================================
 
-def solve_torch_batch(instance, batch_size=100, dual_init=10, 
+def solve_torch_batch(instance, optimizer="adam",
+                      batch_size=100, dual_init=10, 
                       gamma=0.01, beta=0.01, num_iters=1000, 
                       device='cuda'):
     
@@ -169,10 +334,15 @@ def solve_torch_batch(instance, batch_size=100, dual_init=10,
         grad_X = grad_L_X_batch(F, D, X, Y) # (bs, n, n)
         grad_Y = grad_L_Y_batch(X)
         
-        X, v, buffer = rmsprop_batch_jit(X, grad_X, v, buffer, gamma=gamma, 
-                                         alpha=0.99, lam=0.98, mu=0.91, eps=1e-8)
+        if optimizer == "rmsprop":
+            X, v, buffer = rmsprop_batch_jit(X, grad_X, v, buffer, gamma=gamma, 
+                                             alpha=0.99, lam=0.98, mu=0.91, eps=1e-8)
+        elif optimizer == "adam":
+            X, v, buffer = adam_torch(X, grad_X, v, buffer, t=it+1, gamma=gamma)
+        else:
+            raise ValueError(f"Unknown optimizer: {optimizer}")
         
-        Y = Y + beta * grad_Y
+        Y -= beta * grad_Y
         
         # --- Projection ---
         X = dykstra_proj_batch_jit(X, max_iter=20) 
@@ -192,11 +362,14 @@ def solve_torch_batch(instance, batch_size=100, dual_init=10,
             # row_sum = incumbent_X.sum(dim=1).mean().item()
             # print(f"Iter {it}: New Best {incumbent_obj:.4f}")
 
-        if it % 100 == 0:
-            penalty = (X * X - X).sum(dim=(1,2)).mean().item()
-            print(f"Iter {it}, Best: {incumbent_obj:.4f}, BatchMeanObj: {obj_vals.mean().item():.2f}, Pen: {penalty:.2e}")
+        if (it+1) % 1000 == 0:
+            penalty = (X * X - X).mean(dim=(1,2)).mean().item()
+            print(f"Iter {it+1}, Best: {incumbent_obj:.4f}, BatchMeanObj: {obj_vals.mean().item():.2f}, Pen: {penalty:.2e}")
+            if np.abs(penalty) < 1e-2:
+                print("Early stopping due to low penalty.")
+                break
 
-    return incumbent_X.cpu().numpy(), incumbent_obj, obj_label, x_label
+    return incumbent_X.cpu().numpy(), incumbent_obj, obj_label, x_label, it
 
 
 def read_instance(instance):
@@ -231,6 +404,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--iters', type=int, default=2000)
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--optimizer', type=str, default="adam", choices=["rmsprop", "adam"])
     
     args = parser.parse_args()
     
@@ -246,8 +420,9 @@ if __name__ == "__main__":
     
     # solve
     start_event.record()
-    X_best, obj_best, obj_label, x_label = solve_torch_batch(
+    X_best, obj_best, obj_label, x_label, it = solve_torch_batch(
         args.instance, 
+        args.optimizer,
         batch_size=args.batch_size, 
         dual_init=10, 
         gamma=0.02, 
@@ -274,7 +449,9 @@ if __name__ == "__main__":
         print(row_sums)
         print(col_sums)
         print("Solution is a valid permutation matrix.")
-        
+    
+    gap = (obj_best - obj_label) / obj_label
+    
     # check solution
     # n, F_np, D_np, _, _ = read_instance(args.instance)
     # final_obj = 0
@@ -288,4 +465,4 @@ if __name__ == "__main__":
     
     # write the result to a file
     with open(f"result.txt", "a") as f:
-        f.write(f"{args.instance} {solve_time:.2f} {obj_best} {obj_label}\n")
+        f.write(f"{args.instance} {solve_time:.2f} {obj_best} {obj_label} {gap:.4f}\n")
