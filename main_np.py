@@ -200,7 +200,7 @@ def solve_np(instance, optimizer="adam", dual_init=10.0, gamma=0.01, beta=0.01, 
             "dual_init": dual_init,
             "gamma": gamma,
             "beta": beta,
-            "num_iters": num_iters
+            "num_iters": num_iters,
         })
         
     for it in range(num_iters):
@@ -240,10 +240,12 @@ def solve_np(instance, optimizer="adam", dual_init=10.0, gamma=0.01, beta=0.01, 
         # log to wandb
         if wandb:
             wandb.log({
-                "iteration": it,
+                # "iteration": it,
                 "objective": obj_fn_np(F_np, D_np, X),
                 "incumbent_objective": incumbent_obj,
                 "integrality_penalty": integrality_penalty,
+                "lagrangian": obj_fn_np(F_np, D_np, X) + np.sum(Y * (X * X - X)),
+                "dual_mean": np.mean(Y),
             })
         
         if np.abs(integrality_penalty) < 1e-8:
@@ -261,9 +263,11 @@ if __name__ == "__main__":
     parser.add_argument('--wandb', action='store_true')
     args = parser.parse_args()
     
-    start_time = time.time()
-    X, incumbent_obj, obj_label = solve_np(args.instance, args.optimizer, dual_init=5.0, gamma=0.02, beta=0.02, num_iters=100000000, wandb=args.wandb)
-    end_time = time.time()
-    print(f"Solve time: {end_time - start_time} seconds")
+    read_instance(args.instance)
     
-    print(f"Final incumbent objective: {incumbent_obj}, Solution file objective: {obj_label}")
+    # start_time = time.time()
+    # X, incumbent_obj, obj_label = solve_np(args.instance, args.optimizer, dual_init=5.0, gamma=0.02, beta=0.02, num_iters=100000, wandb=args.wandb)
+    # end_time = time.time()
+    # print(f"Solve time: {end_time - start_time} seconds")
+    
+    # print(f"Final incumbent objective: {incumbent_obj}, Solution file objective: {obj_label}")
