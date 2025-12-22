@@ -265,9 +265,9 @@ if __name__ == "__main__":
     
     read_instance(args.instance)
     
-    # start_time = time.time()
-    # X, incumbent_obj, obj_label = solve_np(args.instance, args.optimizer, dual_init=5.0, gamma=0.02, beta=0.02, num_iters=100000, wandb=args.wandb)
-    # end_time = time.time()
-    # print(f"Solve time: {end_time - start_time} seconds")
+    start_time = time.time()
+    X, incumbent_obj, obj_label = solve_np(args.instance, args.optimizer, dual_init=5.0, gamma=0.02, beta=0.02, num_iters=100000, wandb=args.wandb)
+    end_time = time.time()
+    print(f"Solve time: {end_time - start_time} seconds")
     
-    # print(f"Final incumbent objective: {incumbent_obj}, Solution file objective: {obj_label}")
+    print(f"Final incumbent objective: {incumbent_obj}, Solution file objective: {obj_label}")
