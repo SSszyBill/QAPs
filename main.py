@@ -182,11 +182,11 @@ def main():
     all_files = [f for f in os.listdir(args.data_dir) if f.endswith('.dat')]
     all_files.sort()
     
-    target_filename = 'esc16c.dat'  # 要筛选的文件名
-    if target_filename in all_files:
-        target_files = [target_filename]  # 只保留这个文件
+    # target_filename = 'esc16c.dat'  # 要筛选的文件名
+    # if target_filename in all_files:
+    #     target_files = [target_filename]  # 只保留这个文件
     
-    # target_files = all_files[25:] 
+    target_files = all_files[:1] 
     
     results = []
 
@@ -213,6 +213,30 @@ def main():
         
         # Pandas 展示需要 CPU 数据，我们在 run_single_instance 中已经转好 float 了
         print(df[final_cols].to_string(index=False, float_format="%.2f"))
+
+        # === 新增：将结果输出到result.txt文件 ===
+        result_txt_path = os.path.join(args.base_result_dir, 'result.txt')
+        print(f"\n[System] Writing results to: {result_txt_path}")
+        
+        with open(result_txt_path, 'w') as f:
+            # 写入表头
+            f.write("instance_name, our_obj, sln_obj, gap, times\n")
+            
+            # 写入每个实例的结果
+            for res in results:
+                instance_name = res["Instance"]
+                our_obj = res["MyCost"]
+                sln_obj = res["OptCost"] if res["OptCost"] is not None else "N/A"
+                gap = res["Gap(%)"] if res["Gap(%)"] is not None else "N/A"
+                times = res["Time(s)"]
+                
+                # 处理N/A值，确保格式正确
+                if sln_obj == "N/A":
+                    gap = "N/A"
+                
+                f.write(f"{instance_name}, {our_obj:.2f}, {sln_obj if sln_obj == 'N/A' else f'{sln_obj:.2f}'}, {gap if gap == 'N/A' else f'{gap:.2f}'}, {times:.2f}\n")
+        
+        print(f"[Success] Results saved to: {result_txt_path}")
 
         # excel_path = os.path.join(args.output_dir, 'SK_benchmark_summary.xlsx')
         # try:

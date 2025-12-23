@@ -1,0 +1,2 @@
+instance_name, our_obj, sln_obj, gap, times
+bur26a, 5910332.00, 5426670.00, 8.91, 0.45
