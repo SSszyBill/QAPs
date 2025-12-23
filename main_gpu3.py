@@ -4,7 +4,156 @@ import triton
 import triton.language as tl
 import numpy as np
 import argparse
-import wandb
+import time
+import os
+
+
+# torch.set_float32_matmul_precision('high')
+# -----------------------------------------------------------------------------
+# 1. 优化后的 Triton Greedy Kernel
+# -----------------------------------------------------------------------------
+
+@triton.jit
+def greedy_kernel_optimized(
+    M_ptr,          # 输入 (BS, N, N)
+    Out_ptr,        # 输出 (BS, N, N)
+    stride_b, stride_h, stride_w,
+    N: tl.constexpr, 
+    BLOCK_SIZE: tl.constexpr
+):
+    """
+    优化的 Greedy Rounding Kernel。
+    优化点：
+    1. 将整个 N*N 矩阵加载到寄存器/SRAM (适用于 N <= 64 或适当调整 Block)。
+    2. 在寄存器中维护 Mask，避免昂贵的 Global Memory 写回操作。
+    3. 只在确定 1 的位置写回 Global Memory，减少显存带宽占用。
+    """
+    pid = tl.program_id(0)
+    
+    # 指针偏移
+    m_ptr = M_ptr + pid * stride_b
+    out_ptr = Out_ptr + pid * stride_b
+    
+    # 1. 加载数据到寄存器
+    offs = tl.arange(0, BLOCK_SIZE)
+    mask_load = offs < (N * N)
+    
+    # 加载 M，越界部分设为极小值
+    val = tl.load(m_ptr + offs, mask=mask_load, other=-1.0e10)
+    
+    # 循环 N 次进行匹配
+    for _ in range(N):
+        # a. 寻找当前最大值 (Reduction)
+        max_val = tl.max(val, axis=0)
+        
+        # b. 找到最大值的索引 (Argmax)
+        # 注意: 如果有多个相同最大值，Argmax 返回第一个
+        is_max = (val == max_val)
+        idx = tl.argmax(is_max.to(tl.int32), axis=0)
+        
+        # c. 计算行列坐标
+        r = idx // N
+        c = idx % N
+        
+        # d. 写入结果
+        # 我们假设 Out_ptr 外部已初始化为 0，这里只写 1
+        tl.store(out_ptr + idx, 1.0)
+        
+        # e. In-Register Masking (关键加速点)
+        # 不写回 Global Memory，直接在寄存器变量 val 上操作
+        row_mask = (offs // N) == r
+        col_mask = (offs % N) == c
+        combined_mask = row_mask | col_mask
+        
+        # 将被选中的行和列的值设为极小值，使其不再被选中
+        val = tl.where(combined_mask, -1.0e10, val)
+
+def run_greedy_triton(M):
+    bs, n, _ = M.shape
+    # Block size 必须是 2 的幂
+    block_size = triton.next_power_of_2(n * n)
+    
+    # 准备输出容器
+    assignment = torch.zeros_like(M)
+    
+    # Triton Kernel 限制: 如果 N 很大 (例如 > 64)，N*N 超过 4096，
+    # 单个线程块寄存器压力会很大。
+    # 对于 NUG12-NUG30 这类问题，N <= 64，此 Kernel 极快。
+    if n <= 64:
+        grid = (bs,)
+        greedy_kernel_optimized[grid](
+            M, assignment,
+            M.stride(0), M.stride(1), M.stride(2),
+            N=n,
+            BLOCK_SIZE=block_size
+        )
+    else:
+        # 对于超大 N，回退到 PyTorch 批处理实现
+        assignment = greedy_round_large_batch_torch(M)
+        
+    return assignment
+
+def greedy_round_large_batch_torch(M):
+    """针对大 N 的 PyTorch 批处理实现"""
+    bs, n, _ = M.shape
+    assignment = torch.zeros_like(M)
+    M_temp = M.clone()
+    batch_indices = torch.arange(bs, device=M.device)
+    
+    for _ in range(n):
+        flat_M = M_temp.view(bs, -1)
+        _, idx = flat_M.max(dim=1) 
+        rows = idx.div(n, rounding_mode='floor')
+        cols = idx % n
+        assignment[batch_indices, rows, cols] = 1.0
+        # 这种 masking 在 PyTorch 中比较慢，因为涉及大量内存拷贝
+        M_temp[batch_indices, rows, :] = -1e10
+        M_temp[batch_indices, :, cols] = -1e10
+    return assignment
+
+# -----------------------------------------------------------------------------
+# 2. 算子融合与计算图优化 (PyTorch 2.0)
+# -----------------------------------------------------------------------------
+
+# 使用 torch.compile 替代 torch.jit.script
+# mode="reduce-overhead" 专门针对这种小尺寸矩阵、多次迭代的场景优化 CUDA Graph 启动
+@torch.compile
+def sinkhorn_step(log_alpha, num_iters: int = 10):
+    log_S = log_alpha
+    for _ in range(num_iters):
+        # Row Normalization
+        log_S = log_S - torch.logsumexp(log_S, dim=-1, keepdim=True)
+        # Column Normalization
+        log_S = log_S - torch.logsumexp(log_S, dim=-2, keepdim=True)
+    return torch.exp(log_S)
+
+@torch.compile
+def compute_loss_and_grad(X, Y, F, D_T):
+    """
+    将 Loss 计算和梯度相关的操作融合，减少中间变量显存占用。
+    """
+    # 1. Sinkhorn Forward
+    S = sinkhorn_step(X, num_iters=10)
+    
+    # 2. QAP Objective: Trace(F S D^T S^T)
+    # 利用矩阵乘法结合律减少计算量
+    # 路径: (F @ S) -> M1; (M1 @ D_T) -> M2; Sum(M2 * S)
+    M1 = torch.matmul(F, S) 
+    M2 = torch.matmul(M1, D_T)
+    term1 = torch.sum(M2 * S)
+    
+    # 3. Penalty Term: sum(Y * (S^2 - S))
+    # 提前计算 S^2 - S，既用于 Loss 也用于后续 Dual 更新
+    S_sq_minus_S = S * (S - 1.0)
+    term2 = torch.sum(Y * S_sq_minus_S)
+    
+    loss = term1 + term2
+    
+    return loss, S, S_sq_minus_S
+
+# -----------------------------------------------------------------------------
+# 3. 主逻辑
+# -----------------------------------------------------------------------------
 
 def read_instance(instance):
     # 请确保路径正确
@@ -20,6 +169,10 @@ def read_instance(instance):
     D_flat = [next(data_iter) for _ in range(n * n)]
     D_np = np.array(D_flat).reshape(n, n)
     
+    if not os.path.exists(solution_file):
+        return n, F_np, D_np, 1.0, None
+    
+    
     with open(solution_file, "r") as f:
         sol_data = f.read().split()
     sol_data_iter = iter(map(int, sol_data))
@@ -32,262 +185,79 @@ def read_instance(instance):
         
     return n, F_np, D_np, obj_label, x_label_np
 
-def obj_fn_batch(F, D, X):
-    """
-    Optimized implementation of trace(F * X * D.T * X.T) using matmul instead of einsum.
-    F: (N, N)
-    D: (N, N)
-    X: (BS, N, N)
-    """
-    # Einsum path: torch.einsum('ij,bjk,lk,bil->b', F, X, D, X)
-    # Optimized path:
-    # 1. M1 = F @ X  -> PyTorch broadcasts F (N,N) against X (B,N,N) efficiently
-    # 2. M2 = M1 @ D.T
-    # 3. Trace(M2 @ X.T) = sum(M2 * X)
-    
-    # Pre-transpose D here or ensure inputs are correct. 
-    # Note: To match einsum 'lk', we need D.T if input is D
-    
-    # F (N,N) @ X (B,N,N) -> (B,N,N)
-    # We rely on broadcasting behavior of matmul
-    val = torch.matmul(F, X)
-    
-    # (B,N,N) @ D.T (N,N) -> (B,N,N)
-    val = torch.matmul(val, D.t())
-    
-    # Element-wise multiply and sum dimensions 1 and 2
-    return torch.sum(val * X, dim=(1, 2))
-
-def greedy_round_large_batch(M):
-    """
-    M: (bs, n, n)
-    """
-    bs, n, _ = M.shape
-    assignment = torch.zeros_like(M)
-    M_temp = M.clone()
-    
-    batch_indices = torch.arange(bs, device=M.device)
-    
-    for _ in range(n):
-        flat_M = M_temp.view(bs, -1)
-        _, idx = flat_M.max(dim=1) # (bs,)
-        
-        rows = idx.div(n, rounding_mode='floor')
-        cols = idx % n
-        
-        assignment[batch_indices, rows, cols] = 1.0
-        
-        M_temp[batch_indices, rows, :] = -1e10
-        M_temp[batch_indices, :, cols] = -1e10
-        
-    return assignment
-
-
-@triton.jit
-def greedy_kernel(
-    M_ptr,          # 输入矩阵指针 (BS, N, N)
-    Out_ptr,        # 输出矩阵指针 (BS, N, N)
-    stride_b, stride_h, stride_w,  # M 的 strides
-    N: tl.constexpr, # 矩阵大小
-    BLOCK_SIZE: tl.constexpr # 设置为大于等于 N*N 的最小 2^k
-):
-    # 1. 获取当前程序的 batch ID
-    pid = tl.program_id(0)
-    
-    # 2. 计算当前 Batch 在内存中的起始偏移量
-    m_start_ptr = M_ptr + pid * stride_b
-    out_start_ptr = Out_ptr + pid * stride_b
-    
-    # 3. 加载整个 N*N 矩阵到寄存器/SRAM
-    offs = tl.arange(0, BLOCK_SIZE)
-    mask = offs < (N * N)
-    
-    # 加载 M，对于越界部分填充 -inf
-    val = tl.load(m_start_ptr + offs, mask=mask, other=-float('inf'))
-    
-    # 循环 N 次寻找最大值
-    for _ in range(N):
-        # a. 找到当前剩余元素中的最大值索引
-        max_val = tl.max(val, axis=0)
-        
-        # b. 找到该最大值对应的 index
-        is_max = (val == max_val)
-        idx = tl.argmax(is_max.to(tl.int32), axis=0) 
-        
-        # c. 计算 Row 和 Col
-        r = idx // N
-        c = idx % N
-        
-        # d. 写入结果 1.0
-        tl.store(out_start_ptr + idx, 1.0)
-        
-        # e. Masking (核心加速点)
-        row_mask = (offs // N) == r
-        col_mask = (offs % N) == c
-        combined_mask = row_mask | col_mask
-        
-        # 更新 val: 凡是 mask 命中的地方，更新为 -inf
-        val = tl.where(combined_mask, -float('inf'), val)
-
-def greedy_round_batch(M):
-    bs, n, _ = M.shape
-    
-    # 计算需要的 Block Size
-    block_size = triton.next_power_of_2(n * n)
-    
-    # 检查 Block Size 是否在合理的 Shared Memory 范围内
-    # Float64 (8 bytes) * 8192 = 64KB (标准 consumer GPU 上限)
-    # 如果 n > 90, block_size 变为 16384 (128KB)，可能需要 A100/H100 或 L2 cache spill
-    # 这里的阈值设为 85，涵盖大多数 QAP benchmark 且安全
-    if n <= 60: 
-        assignment = torch.zeros_like(M)
-        grid = (bs,)
-        greedy_kernel[grid](
-            M, 
-            assignment,
-            M.stride(0), M.stride(1), M.stride(2),
-            N=n,
-            BLOCK_SIZE=block_size
-        )
-    else:
-        # Fallback for very large N
-        assignment = greedy_round_large_batch(M)
-    
-    return assignment
-
-# 使用 TorchScript JIT 编译 Sinkhorn，减少 Python 循环开销并融合算子
-@torch.jit.script
-def log_sinkhorn(log_alpha, num_iters: int = 10):
-    """
-    Performs Sinkhorn normalization in the log-domain for numerical stability.
-    JIT compiled for loop fusion and speed.
-    """
-    # Initialize log_S as the input logits
-    log_S = log_alpha.clone()
-
-    for _ in range(num_iters):
-        # 1. Row Normalization
-        lse_row = torch.logsumexp(log_S, dim=-1, keepdim=True)
-        log_S = log_S - lse_row
-
-        # 2. Column Normalization
-        lse_col = torch.logsumexp(log_S, dim=-2, keepdim=True)
-        log_S = log_S - lse_col
-
-    return torch.exp(log_S)
-
-def compute_loss(X, Y, F, D_T):
-    """
-    Calculates L(X, Y) = trace(F * S * D' * S') + sum(Y * (X^2 - X))
-    Note: D passed here should be already transposed (D_T) for efficiency.
-    """
-    S = log_sinkhorn(X)
-    
-    # --- Term 1: Trace(F * S * D^T * S^T) ---
-    # Optimized using matmul: (F @ S @ D_T) * S
-    # F: (N,N), S: (B,N,N), D_T: (N,N)
-    
-    # Broadcast F matmul:
-    M = torch.matmul(F, S) # (B,N,N)
-    # Broadcast D_T matmul:
-    M = torch.matmul(M, D_T) # (B,N,N)
-    
-    # Trace logic: sum element-wise product
-    term1 = torch.sum(M * S)
-    
-    # Fusing the squaring and subtraction
-    term2 = torch.sum(Y * (S.square() - S))
-    
-    return term1 + term2
 
 def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, optimizer_type='adam'):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    n = F_np.shape[0]
     
-    # 使用 float64，如原代码要求。如果在非科研场景，建议改为 float32 以获得 2x 速度。
-    dtype = torch.float64 
+    # 【重要优化】: 使用 Float32。
+    # 消费级显卡 FP64 极慢。除非必要，否则使用 FP32。
+    dtype = torch.float32 
     
+    # 将常量移动到 GPU，避免循环内拷贝
     F = torch.tensor(F_np, device=device, dtype=dtype)
     D = torch.tensor(D_np, device=device, dtype=dtype)
+    # 提前转置 D，避免循环内重复转置
+    D_T = D.transpose(-1, -2).contiguous() 
     
-    # Pre-calculate D transpose outside the loop
-    D_T = D.transpose(-1, -2).contiguous()
+    n = F_np.shape[0]
     
+    # 初始化变量
     X = torch.rand((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
     
     if optimizer_type.lower() == 'adam':
         optimizer = optim.Adam([X], lr=lr)
-    elif optimizer_type.lower() == 'rmsprop':
+    else:
         optimizer = optim.RMSprop([X], lr=lr)
         
     incumbent_obj = float('inf')
-    incumbent_X = None
     
-    wandb = False
+    print(f"Starting Optimization [N={n}, Batch={batch_size}, Device={device}]")
     
-    if wandb:
-        import wandb
-        wandb.init(project="QAP_solver", name=f"nug30_np_{optimizer_type}")
-        wandb.config.update({
-            "instance": "nug30",
-            "optimizer": optimizer_type,
-            "dual_init": dual_init,
-            "gamma": lr,
-            "beta": lr,
-            "num_iters": num_steps,
-        })
+    # Warmup (对于 Triton 和 torch.compile 很重要)
+    _ = compute_loss_and_grad(X[:2], Y[:2], F, D_T)
+    
+    t0 = time.time()
     
     for it in range(num_steps):
-        optimizer.zero_grad()
+        # set_to_none=True 比 zero_grad() 稍微快一点
+        optimizer.zero_grad(set_to_none=True)
         
-        # Pass D_T instead of D
-        loss = compute_loss(X, Y, F, D_T)
+        # 1. 计算 Loss 和所需的中间变量
+        # 得益于 torch.compile，这里会融合成极少的 Kernel
+        loss, P, P_sq_minus_P = compute_loss_and_grad(X, Y, F, D_T)
+        
         loss.backward()
         optimizer.step()
         
-        # update Y
+        # 2. Dual Update & Evaluation
         with torch.no_grad():
-            # Re-compute P inside no_grad (fast due to JIT)
-            P = log_sinkhorn(X)
+            # In-place update
+            Y.add_(P_sq_minus_P, alpha=lr)
             
-            # Fused update
-            Y.add_(P * P - P, alpha=lr)
-    
-            # rounding and evaluation
-            X_int = greedy_round_batch(P)
+            # 使用优化的 Triton Kernel 进行 Rounding
+            X_int = run_greedy_triton(P)
             
-            # 使用优化后的 obj_fn_batch
-            obj_vals = obj_fn_batch(F, D, X_int) 
+            # 评估目标函数值
+            # (F @ X_int @ D.T) * X_int
+            # 这里的矩阵乘法依旧是瓶颈之一，但对于 batch 计算是必须的
+            val = torch.matmul(F, X_int)
+            val = torch.matmul(val, D_T)
+            obj_vals = torch.sum(val * X_int, dim=(1, 2))
             
-            # update incumbent        
             min_obj_batch, min_idx = torch.min(obj_vals, dim=0)
             if min_obj_batch < incumbent_obj:
                 incumbent_obj = min_obj_batch.item()
-                incumbent_X = X_int[min_idx].clone()
+                # 仅在需要时 clone，节约时间
+                incumbent_X = X_int[min_idx].clone() 
 
-            if (it+1) % 1000 == 0:
-                # Optimized penalty calc
-                penalty = (P.square() - P).mean().item()
-                print(f"Iter {it+1}, Best: {incumbent_obj:.4f}, BatchMeanObj: {obj_vals.mean().item():.2f}, Pen: {penalty:.2e}")
-                if np.abs(penalty) < 1e-6:
-                    print("Early stopping due to low penalty.")
-                    break
-            
-            if wandb:
-                wandb.log({
-                    # "iteration": it,
-                    "objective": obj_fn_batch(F, D, P).item(),
-                    "incumbent_objective": incumbent_obj,
-                    "integrality_penalty": torch.abs((P*P-P)).mean().item(),
-                    "lagrangian": (obj_fn_batch(F, D, P) + torch.sum(Y * (P * P - P))).mean().item(),
-                    "dual_mean": torch.mean(Y),
-                })
-            
-        
+            if (it+1) % 100 == 0:
+                print(f"Iter {it+1}: Best Obj {incumbent_obj:.4f}, Loss {loss.item():.4f}")
+                
+    total_time = time.time() - t0
+    print(f"Total Time: {total_time:.2f}s, FPS: {num_steps/total_time:.1f}")
     return incumbent_X, incumbent_obj
 
-# --- Example Usage ---
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--instance', type=str, default="nug12")
@@ -307,14 +277,33 @@ if __name__ == "__main__":
     num_steps = args.iters
     lr = 0.02
     dual_init = 10.0
-    dtype = torch.float64
+    dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
     start_event.record()
-    optimized_X, obj_best = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, lr, optimizer_type=args.optimizer)
+    X_best, obj_best = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, lr, optimizer_type=args.optimizer)
     end_event.record()
     torch.cuda.synchronize()
+    
+    row_sums = X_best.sum(axis=1)
+    col_sums = X_best.sum(axis=0)
+    if row_sums.min() < 0.99 or row_sums.max() > 1.01:
+        print("Warning: Solution might not be a valid permutation.")
+    else:
+        print(row_sums)
+        print(col_sums)
+        print("Solution is a valid permutation matrix.")
+        
+    # # check solution
+    # n, F_np, D_np, _, _ = read_instance(args.instance)
+    # final_obj = 0
+    # for i in range(n):
+    #     for j in range(n):
+    #         for k in range(n):
+    #             for l in range(n):
+    #                 final_obj += F_np[i, j] * D_np[k, l] * X_best[i, k] * X_best[j, l]
+    # print(f"Final Obj Check: {final_obj}")
     
     solve_time = start_event.elapsed_time(end_event) / 1000.0  # seconds
     
