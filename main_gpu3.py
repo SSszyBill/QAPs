@@ -4,6 +4,7 @@ import triton
 import triton.language as tl
 import numpy as np
 import argparse
+import wandb
 
 def read_instance(instance):
     # 请确保路径正确
@@ -223,6 +224,20 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     incumbent_obj = float('inf')
     incumbent_X = None
     
+    wandb = False
+    
+    if wandb:
+        import wandb
+        wandb.init(project="QAP_solver", name=f"nug30_np_{optimizer_type}")
+        wandb.config.update({
+            "instance": "nug30",
+            "optimizer": optimizer_type,
+            "dual_init": dual_init,
+            "gamma": lr,
+            "beta": lr,
+            "num_iters": num_steps,
+        })
+    
     for it in range(num_steps):
         optimizer.zero_grad()
         
@@ -255,9 +270,20 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
                 # Optimized penalty calc
                 penalty = (P.square() - P).mean().item()
                 print(f"Iter {it+1}, Best: {incumbent_obj:.4f}, BatchMeanObj: {obj_vals.mean().item():.2f}, Pen: {penalty:.2e}")
-                if np.abs(penalty) < 1e-2:
+                if np.abs(penalty) < 1e-6:
                     print("Early stopping due to low penalty.")
                     break
+            
+            if wandb:
+                wandb.log({
+                    # "iteration": it,
+                    "objective": obj_fn_batch(F, D, P).item(),
+                    "incumbent_objective": incumbent_obj,
+                    "integrality_penalty": torch.abs((P*P-P)).mean().item(),
+                    "lagrangian": (obj_fn_batch(F, D, P) + torch.sum(Y * (P * P - P))).mean().item(),
+                    "dual_mean": torch.mean(Y),
+                })
+            
         
     return incumbent_X, incumbent_obj
 
