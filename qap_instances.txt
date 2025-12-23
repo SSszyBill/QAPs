@@ -1,3 +1,6 @@
+bl100
+bl121
+bl144
 bur26a
 bur26b
 bur26c
@@ -20,6 +23,9 @@ chr20c
 chr22a
 chr22b
 chr25a
+ci100
+ci121
+ci144
 els19
 esc128
 esc16a
@@ -105,6 +111,11 @@ tai100a
 tai100b
 tai10a
 tai10b
+tai125e01
+tai125e02
+tai125e03
+tai125e04
+tai125e05
 tai12a
 tai12b
 tai150b
@@ -118,6 +129,11 @@ tai25a
 tai25b
 tai30a
 tai30b
+tai343e01
+tai343e02
+tai343e03
+tai343e04
+tai343e05
 tai35a
 tai35b
 tai40a
@@ -127,6 +143,11 @@ tai50b
 tai60a
 tai60b
 tai64c
+tai729e01
+tai729e02
+tai729e03
+tai729e04
+tai729e05
 tai80a
 tai80b
 tho150
