@@ -1,14 +1,18 @@
 from sk_solver import SK_QAP_Solver
 import torch
 import numpy as np
-
+import gurobipy as gp
+from gurobipy import GRB
+from scipy.optimize import linear_sum_assignment
 class TestSK:
     def __init__(self, n, A, B, z, device='cuda' if torch.cuda.is_available() else 'cpu'):
         self.n = n
+        self.A = torch.tensor(A, dtype=torch.float32, device=device)
+        self.B = torch.tensor(B, dtype=torch.float32, device=device)
         self.z = z
         self.device = device
     def test_sk (self):
-        solver = SK_QAP_Solver(self.n, device=self.device)
+        solver = SK_QAP_Solver(self.n, A, B, device=self.device)
         z_sk = solver.knight_sinkhorn_step(self.z, n_iter=100)
         return z_sk
     def check_sk(self, P):
@@ -53,18 +57,113 @@ class TestSK:
             print(f"❌ 全局最大误差: {max_error:.6f},P 不是双随机矩阵(判定阈值:{ERROR_THRESHOLD})")
         return is_valid, max_error
 
+def solve_birkhoff_projection(A_tensor, n):
+    """
+    使用 Gurobi 将矩阵 A 投影到双随机矩阵集合 (Birkhoff Polytope) 上。
+    min ||X - A||_F^2
+    s.t. X >= 0, X*1 = 1, X.T*1 = 1
+    """
+    
+    # 1. 数据准备：将 PyTorch Tensor 转为 Numpy 方便 Gurobi 处理
+    A = A_tensor.detach().cpu().numpy()
+    
+    # 2. 建立模型
+    model = gp.Model("Birkhoff_Projection")
+    
+    #以此关闭 Gurobi 的控制台输出（如果想看求解过程可设为 1）
+    model.setParam('OutputFlag', 0) 
+    
+    # 3. 定义变量
+    # X 是 n x n 的矩阵，lb=0.0 满足非负性约束 (X >= 0)
+    # ub=1.0 是隐式的（因为和为1），但显式加上有助于求解器预处理
+    x = model.addVars(n, n, lb=0.0, ub=1.0, vtype=GRB.CONTINUOUS, name="x")
+    
+    # 4. 设置目标函数：最小化 Frobenius 范数的平方
+    # min sum((x_ij - A_ij)^2)
+    # 展开后等价于 min sum(x_ij^2 - 2*A_ij*x_ij)，常数项 A_ij^2 不影响最优解，
+    # 但为了保持目标函数值为真实的距离平方，我们保留完整形式。
+    obj_expr = gp.quicksum((x[i, j] - A[i, j]) * (x[i, j] - A[i, j]) 
+                           for i in range(n) for j in range(n))
+    
+    model.setObjective(obj_expr, GRB.MINIMIZE)
+    
+    # 5. 添加约束
+    
+    # 约束 1: 行和为 1 (X * 1 = 1)
+    for i in range(n):
+        model.addConstr(gp.quicksum(x[i, j] for j in range(n)) == 1.0, name=f"row_{i}")
+        
+    # 约束 2: 列和为 1 (X.T * 1 = 1)
+    for j in range(n):
+        model.addConstr(gp.quicksum(x[i, j] for i in range(n)) == 1.0, name=f"col_{j}")
+        
+    # 6. 开始求解
+    model.optimize()
+    
+    # 7. 获取结果并转回 PyTorch Tensor
+    X_sol = torch.zeros((n, n))
+    
+    if model.status == GRB.OPTIMAL:
+        # 提取解
+        solution = model.getAttr('X', x)
+        for i in range(n):
+            for j in range(n):
+                X_sol[i, j] = solution[i, j]
+        return X_sol
+    else:
+        print("Optimization failed or was infeasible.")
+        return None
+    
+def evaluate_single(P_soft):
+    """匈牙利算法离散化"""
+    with torch.no_grad():
+        P_np = P_soft.detach().cpu().numpy()
+        row_ind, col_ind = linear_sum_assignment(-P_np)
+        P_bin = torch.zeros((n, n), device=P_soft.device)
+        P_bin[row_ind, col_ind] = 1.0
+        return P_bin
+
 if __name__ == "__main__":
-    n = 26
-    z = torch.rand(size=(n, n)) + 1e-8
+    n = 10
+    z = torch.randn(size=(n, n)) 
+    A = torch.ones(size=(n, n))
+    B = torch.ones(size=(n, n))
     print(z)
+
     if torch.any(z < 0):
         print("Initial z has negative values!")
     if torch.any(z > 1):
         print("Initial z has values greater than 1!")
-    tester = TestSK(n, z)
+    #sinkhorn
+    z_clamp = torch.clamp(z, 0.0)
+    tester = TestSK(n, A.numpy(), B.numpy(), z_clamp)
     P_sk = tester.test_sk()
     is_valid, max_error = tester.check_sk(P_sk)
     if is_valid:
         print(f"✅ P 是双随机矩阵，最大误差: {max_error:.6f}")
     else:
         print(f"❌ P 不是双随机矩阵，最大误差: {max_error:.6f}")
+
+    #gurobi birkhoff projection
+    X_projected = solve_birkhoff_projection(z, n)
+    if X_projected is not None:
+        print("\nOptimization Finished!")
+    
+    # 检查行和与列和
+    row_sums = torch.sum(X_projected, dim=1)
+    col_sums = torch.sum(X_projected, dim=0)
+    print(f"X_projected row sums: {row_sums}")
+    print(f"X_projected col sums: {col_sums}")
+    print(f"Max deviation in Row Sums (should be 0): {torch.max(torch.abs(row_sums - 1.0)).item():.2e}")
+    print(f"Max deviation in Col Sums (should be 0): {torch.max(torch.abs(col_sums - 1.0)).item():.2e}")
+    print(f"Min value in X (should be >= 0): {torch.min(X_projected).item():.2e}")
+    error = X_projected - P_sk
+    print(error)
+
+    P_bin = evaluate_single(P_sk)
+    X_bin = evaluate_single(X_projected)
+    if torch.allclose(X_bin, P_bin, atol=1e-3):
+        print("✅ X_bin 与 P_bin 相等")
+    else:
+        print("❌ X_bin 与 P_bin 不相等\n")
+        print(f"max error: {torch.max(torch.abs(error)).item():.2e}")

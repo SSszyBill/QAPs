@@ -7,7 +7,7 @@ import pandas as pd  # 新增：用于处理表格数据
 from parse import parse_qap_dat, parse_qap_solution
 
 class GurobiQAPSolver:
-    def __init__(self, n, A, B, time_limit=300, verbose=False):
+    def __init__(self, n, A, B, time_limit=1200, verbose=False):
         """
         Args:
             verbose: 是否打印 Gurobi 内部详细日志
@@ -25,7 +25,7 @@ class GurobiQAPSolver:
         
         # === 参数设置 ===
         self.model.Params.TimeLimit = self.time_limit
-        self.model.Params.OutputFlag = 1 if self.verbose else 0  # 批量运行时通常关闭详细日志
+        self.model.Params.OutputFlag = 1   # 批量运行时通常关闭详细日志
         self.model.Params.NonConvex = 2   
         self.model.Params.MIPGap = 0.0    
         self.model.Params.Threads = 8     
@@ -104,11 +104,11 @@ def main():
     all_files.sort()
     
     # 示例：只跑文件名包含 'tai' 的前 3 个小规模算例用于测试
-    # target_files = [f for f in all_files if 'tai' in f][:3]
+    target_files = [f for f in all_files if 'bl' in f]
     # 如果要跑所有文件：
-    target_filename = 'nug12.dat'  # 要筛选的文件名
-    if target_filename in all_files:
-        target_files = [target_filename]  # 只保留这个文件
+    # target_filename = 'nug30.dat'  # 要筛选的文件名
+    # if target_filename in all_files:
+    #     target_files = [target_filename]  # 只保留这个文件
     results_list = []
 
     print(f"Found {len(target_files)} instances. Starting benchmark...")
@@ -129,15 +129,15 @@ def main():
             continue
         
         # 跳过过大的算例 (可选)
-        if n > 20: 
-            print(f"{instance_name:<15} | {n:<5} | {'SKIPPED (Too Large)':<40}")
-            continue
+        # if n > 20: 
+        #     print(f"{instance_name:<15} | {n:<5} | {'SKIPPED (Too Large)':<40}")
+        #     continue
 
         # 2. 获取已知最优解
         opt_val_known, opt_perm_known = parse_qap_solution(soln_path)
 
         # 3. Gurobi 求解
-        solver = GurobiQAPSolver(n, A, B, time_limit=600, verbose=False)
+        solver = GurobiQAPSolver(n, A, B, time_limit=1200, verbose=False)
         res = solver.solve()
 
         # 4. 计算指标
@@ -167,7 +167,7 @@ def main():
             "Instance": instance_name,
             "Size": n,
             "Gurobi_Obj": my_cost,
-            "Known_Opt": opt_val_known,
+            "Known_Opt": opt_val_known, 
             "Gap_to_Opt(%)": gap_percent,
             "Gurobi_MIP_Gap": res['mip_gap'],
             "Solve_Time(s)": res['time'],
@@ -181,7 +181,7 @@ def main():
         df = pd.DataFrame(results_list)
         
         # 调整列顺序，好看一点
-        cols = ["Instance", "Size", "Gurobi_Obj", "Known_Opt", "Solve_Time(s)"]
+        cols = ["Instance", "Gurobi_Obj", "Known_Opt", "Solve_Time(s)"]
         df = df[cols]
         
         try:
