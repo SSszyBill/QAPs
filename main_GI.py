@@ -82,73 +82,66 @@ def read_dimacs_graph(filepath):
         
 #     return
 
-def generate_isomorphic_batch(base_adj):
-    """
-    Generates N randomly permuted copies of the base graph.
+def generate_isomorphic(filepath):
+    '''
+    min ||PA-BP||_F^2 = ||A||_F^2 + ||B||_F^2 - 2trace(BPA'P'),
+    map to the qap, A = D, B = F
+    '''
     
-    Returns:
-        dataset (list): A list of dictionaries, where each dict contains:
-            - 'adj': The permuted adjacency matrix
-            - 'perm_vector': The 1D permutation vector used (mapping old->new)
-            - 'perm_matrix': The explicit permutation matrix P
-    """
-    n = base_adj.shape[0]
+    D = read_dimacs_graph(filepath)
+    n = D.shape[0]
     
+    # generate random permutation matrix
     p_vec = np.random.permutation(n)
-        
-    # 2. Create Permutation Matrix P
-    # P[i, j] = 1 if p_vec[i] == j
     P = np.zeros((n, n), dtype=np.float32)
     P[np.arange(n), p_vec] = 1
     
-    # 3. Apply Permutation: A_new = P * A_base * P_transpose
-    # Using numpy slicing is faster: A_new = A_base[p_vec][:, p_vec]
-    # But let's follow the algebra for clarity:
-    permuted_adj = P @ base_adj @ P.T
+    # generate the isomorphic graph
+    F = P @ D @ P.T
     
-    # obj = frobenius norm(base_adj) **2 + frobenius norm(permuted_adj) ** 2
-    obj = np.sum(base_adj**2) + np.sum(permuted_adj**2)
-        
-    return n, base_adj, permuted_adj, -obj/2, p_vec
+    # calculate the objective value
+    obj_label = np.sum(D**2) + np.sum(F**2)
+    
+    return n, F, D, -obj_label/2, P
 
 # --- Main Execution ---
 
 # 1. Setup
 instance = '29'
 input_file = f"./GI/paley/paley-{instance}"  # Replace with your actual file
-N = 5                          # Input: Number of graphs to generate
 
-try:
-    print(f"--- Loading Base Graph from {input_file} ---")
-    base_adj = read_dimacs_graph(input_file)
-    print(f"Base Graph: {base_adj.shape[0]} nodes")
 
-    print(f"\n--- Generating {N} Isomorphic Instances ---")
-    data = generate_isomorphic_batch(base_adj, num_instances=N)
+# base_adj = read_dimacs_graph(input_file)
+n, F_np, D_np, obj_val, x_label = generate_isomorphic(input_file)
 
-    # 2. Inspect the output
-    for item in data:
-        print(f"\nInstance {item['id']}:")
-        print(f"  - Adjacency Shape: {item['adj'].shape}")
-        # Show first 10 elements of permutation for brevity
-        print(f"  - Permutation Vector (first 10): {item['perm_vector'][:10]}...") 
+    
+tmp = x_label @ D_np.T @ x_label.T
+obj2 = np.trace(F_np @ tmp)
+print("Objective check:", obj2 + obj_val)
+
+#     # 2. Inspect the output
+#     for item in data:
+#         print(f"\nInstance {item['id']}:")
+#         print(f"  - Adjacency Shape: {item['adj'].shape}")
+#         # Show first 10 elements of permutation for brevity
+#         print(f"  - Permutation Vector (first 10): {item['perm_vector'][:10]}...") 
         
-    # 3. Verification Example (Verify Instance 0 vs Base)
-    # If correct, P.T @ A_new @ P should equal A_base
-    inst_0 = data[0]
-    P = inst_0['perm_matrix']
-    A_new = inst_0['adj']
+#     # 3. Verification Example (Verify Instance 0 vs Base)
+#     # If correct, P.T @ A_new @ P should equal A_base
+#     inst_0 = data[0]
+#     P = inst_0['perm_matrix']
+#     A_new = inst_0['adj']
     
-    # Reconstruct base from new
-    reconstructed_base = P.T @ A_new @ P
+#     # Reconstruct base from new
+#     reconstructed_base = P.T @ A_new @ P
     
-    # Check difference
-    diff = np.sum(np.abs(reconstructed_base - base_adj))
-    print(f"\nVerification check (Difference): {diff}")
-    if diff < 1e-5:
-        print(">> SUCCESS: The generated graph is perfectly isomorphic.")
-    else:
-        print(">> FAILURE: Math mismatch.")
+#     # Check difference
+#     diff = np.sum(np.abs(reconstructed_base - base_adj))
+#     print(f"\nVerification check (Difference): {diff}")
+#     if diff < 1e-5:
+#         print(">> SUCCESS: The generated graph is perfectly isomorphic.")
+#     else:
+#         print(">> FAILURE: Math mismatch.")
 
-except Exception as e:
-    print(f"An error occurred: {e}")
+# except Exception as e:
+#     print(f"An error occurred: {e}")
