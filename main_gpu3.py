@@ -6,7 +6,7 @@ import numpy as np
 import argparse
 import time
 import os
-
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 # torch.set_float32_matmul_precision('high')
 # -----------------------------------------------------------------------------
@@ -133,7 +133,7 @@ def compute_loss_and_grad(X, Y, F, D_T):
     将 Loss 计算和梯度相关的操作融合，减少中间变量显存占用。
     """
     # 1. Sinkhorn Forward
-    S = sinkhorn_step(X, num_iters=10)
+    S = sinkhorn_step(X, num_iters=20)
     
     # 2. QAP Objective: Trace(F S D^T S^T)
     # 利用矩阵乘法结合律减少计算量
@@ -182,9 +182,45 @@ def read_instance(instance):
     x_label_np = np.zeros((n, n))
     for i in range(n):
         x_label_np[i, x_label[i]] = 1
-        
+    
+    
+    F_np = 0.5 * (F_np + F_np.T)
+    D_np = 0.5 * (D_np + D_np.T)
+
     return n, F_np, D_np, obj_label, x_label_np
 
+def latin_hypercube_matrices(m, n):
+    """使用拉丁超立方体设计生成多样矩阵"""
+    # 将矩阵向量化后的参数空间采样
+    d = m * m  # 参数维度
+    
+    # 生成拉丁超立方体设计
+    samples = np.zeros((n, d))
+    for j in range(d):
+        perm = np.random.permutation(n)
+        samples[:, j] = (perm + np.random.rand(n)) / n
+    
+    # 转换为矩阵
+    matrices = []
+    for i in range(n):
+        # 映射到不同分布
+        vec = samples[i, :]
+        
+        # 可选：应用不同变换获得不同模式
+        transform_type = i % 4
+        if transform_type == 0:
+            vec = np.tanh(vec * 4 - 2)  # 压缩到[-1,1]
+        elif transform_type == 1:
+            vec = np.sin(vec * 2 * np.pi)  # 周期性
+        elif transform_type == 2:
+            vec = np.exp(vec * 3 - 1.5)  # 正数
+        else:
+            vec = vec * 4 - 2  # 线性
+        
+        mat = vec.reshape(m, m)
+        matrices.append(mat)
+    
+    return matrices
 
 def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, optimizer_type='adam'):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -196,20 +232,41 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     # 将常量移动到 GPU，避免循环内拷贝
     F = torch.tensor(F_np, device=device, dtype=dtype)
     D = torch.tensor(D_np, device=device, dtype=dtype)
-    # 提前转置 D，避免循环内重复转置
+    
     D_T = D.transpose(-1, -2).contiguous() 
+    
+    # F = F - F.mean()
+    # D = D - D.mean()
+    
+    # # 3. Spectral Scaling (将谱半径归一化到 1)
+    # # 使用 Arnoldi 迭代或者是直接 eigvalsh (N很小直接算)
+    # # 加上 1e-6 防止除零
+    # scale_F = torch.linalg.eigvalsh(F).abs().max() 
+    # scale_D = torch.linalg.eigvalsh(D).abs().max()
+    
+    # F = F / scale_F
+    # D = D / scale_D
+    
+    
+    # # 提前转置 D，避免循环内重复转置
+
+
     
     n = F_np.shape[0]
     
     # 初始化变量
-    X = torch.rand((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
+    X_rand = np.array(latin_hypercube_matrices(n, batch_size))
+    X = torch.tensor(X_rand, device=device, dtype=dtype, requires_grad=True)
+    
+    # X = torch.rand((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
     
     if optimizer_type.lower() == 'adam':
         optimizer = optim.Adam([X], lr=lr)
     else:
         optimizer = optim.RMSprop([X], lr=lr)
-        
+    
+    # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.1)
     incumbent_obj = float('inf')
     
     print(f"Starting Optimization [N={n}, Batch={batch_size}, Device={device}]")
@@ -229,6 +286,7 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
         
         loss.backward()
         optimizer.step()
+        # scheduler.step()
         
         # 2. Dual Update & Evaluation
         with torch.no_grad():
@@ -250,7 +308,6 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
                 incumbent_obj = min_obj_batch.item()
                 # 仅在需要时 clone，节约时间
                 incumbent_X = X_int[min_idx].clone() 
-
             if (it+1) % 100 == 0:
                 print(f"Iter {it+1}: Best Obj {incumbent_obj:.4f}, Loss {loss.item():.4f}")
                 
@@ -276,7 +333,7 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     num_steps = args.iters
     lr = 0.02
-    dual_init = 10.0
+    dual_init = 1
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
@@ -296,7 +353,21 @@ if __name__ == "__main__":
         print("Solution is a valid permutation matrix.")
         
     # # check solution
-    # n, F_np, D_np, _, _ = read_instance(args.instance)
+    n, F_np, D_np, _, _ = read_instance(args.instance)
+    # Compute final objective value
+    X_best = X_best.cpu().numpy()
+    tmp = X_best @ D_np.T @ X_best.T
+    obj_best = np.trace(F_np @ tmp)
+    
+    # # print the result:
+    # res = []
+    # for i in range(n):
+    #     for j in range(n):
+    #         if X_best[i, j] > 0.5:
+    #             res.append(j+1)
+    #             break
+    # print(res)
+    
     # final_obj = 0
     # for i in range(n):
     #     for j in range(n):
