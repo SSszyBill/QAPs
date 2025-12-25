@@ -266,7 +266,7 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     else:
         optimizer = optim.RMSprop([X], lr=lr)
     
-    # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.1)
+    # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.5)
     incumbent_obj = float('inf')
     
     print(f"Starting Optimization [N={n}, Batch={batch_size}, Device={device}]")
@@ -313,7 +313,7 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
                 
     total_time = time.time() - t0
     print(f"Total Time: {total_time:.2f}s, FPS: {num_steps/total_time:.1f}")
-    return incumbent_X, incumbent_obj
+    return incumbent_X, incumbent_obj, total_time
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -332,6 +332,17 @@ if __name__ == "__main__":
     
     batch_size = args.batch_size
     num_steps = args.iters
+    
+    if n < 300:
+        batch_size = 4000
+        num_steps = 1000
+    elif n < 500:
+        batch_size = 2000
+        num_steps = 2000
+    else:
+        batch_size = 500
+        num_steps = 5000
+    
     lr = 0.02
     dual_init = 1
     dtype = torch.float32
@@ -339,7 +350,7 @@ if __name__ == "__main__":
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
     start_event.record()
-    X_best, obj_best = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, lr, optimizer_type=args.optimizer)
+    X_best, obj_best, solve_time_raw = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, lr, optimizer_type=args.optimizer)
     end_event.record()
     torch.cuda.synchronize()
     
@@ -381,4 +392,4 @@ if __name__ == "__main__":
     gap = (obj_best - obj_label) / obj_label
     
     with open(f"result.txt", "a") as f:
-        f.write(f"{args.instance} {solve_time:.2f} {obj_best} {obj_label} {gap:.4f}\n")
+        f.write(f"{args.instance} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.4f}\n")
