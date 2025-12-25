@@ -182,10 +182,6 @@ def read_instance(instance):
     x_label_np = np.zeros((n, n))
     for i in range(n):
         x_label_np[i, x_label[i]] = 1
-    
-    
-    F_np = 0.5 * (F_np + F_np.T)
-    D_np = 0.5 * (D_np + D_np.T)
 
     return n, F_np, D_np, obj_label, x_label_np
 
