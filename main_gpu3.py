@@ -157,8 +157,8 @@ def compute_loss_and_grad(X, Y, F, D_T):
 
 def read_instance(instance):
     # 请确保路径正确
-    problem_file = f"./qaplibs/qapdata/{instance}.dat"
-    solution_file = f"./qaplibs/qapsoln/{instance}.sln"
+    problem_file = f"./qaplibs/{instance}.dat"
+    solution_file = f"./qaplibs/{instance}.sln"
     
     with open(problem_file, "r") as f:
         data = f.read().split()        
@@ -220,35 +220,22 @@ def latin_hypercube_matrices(m, n):
 
 def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, optimizer_type='adam'):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
-    # 【重要优化】: 使用 Float32。
-    # 消费级显卡 FP64 极慢。除非必要，否则使用 FP32。
     dtype = torch.float32 
+    n = F_np.shape[0]
     
-    # 将常量移动到 GPU，避免循环内拷贝
     F = torch.tensor(F_np, device=device, dtype=dtype)
     D = torch.tensor(D_np, device=device, dtype=dtype)
-    
-    D_T = D.transpose(-1, -2).contiguous() 
     
     # F = F - F.mean()
     # D = D - D.mean()
     
-    # # 3. Spectral Scaling (将谱半径归一化到 1)
-    # # 使用 Arnoldi 迭代或者是直接 eigvalsh (N很小直接算)
-    # # 加上 1e-6 防止除零
-    # scale_F = torch.linalg.eigvalsh(F).abs().max() 
-    # scale_D = torch.linalg.eigvalsh(D).abs().max()
+    # # # # fill diagonal with 0
+    # # # F_diag = torch.diagonal(F)
+    # # # D_diag = torch.diagonal(D)
     
-    # F = F / scale_F
-    # D = D / scale_D
-    
-    
-    # # 提前转置 D，避免循环内重复转置
-
-
-    
-    n = F_np.shape[0]
+    # F.fill_diagonal_(0)
+    # D.fill_diagonal_(0)
+    D_T = D.transpose(-1, -2).contiguous() 
     
     # 初始化变量
     X_rand = np.array(latin_hypercube_matrices(n, batch_size))
@@ -262,7 +249,7 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     else:
         optimizer = optim.RMSprop([X], lr=lr)
     
-    # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.5)
+    # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.01)
     incumbent_obj = float('inf')
     
     print(f"Starting Optimization [N={n}, Batch={batch_size}, Device={device}]")
@@ -293,8 +280,6 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
             X_int = run_greedy_triton(P)
             
             # 评估目标函数值
-            # (F @ X_int @ D.T) * X_int
-            # 这里的矩阵乘法依旧是瓶颈之一，但对于 batch 计算是必须的
             val = torch.matmul(F, X_int)
             val = torch.matmul(val, D_T)
             obj_vals = torch.sum(val * X_int, dim=(1, 2))
@@ -302,13 +287,13 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
             min_obj_batch, min_idx = torch.min(obj_vals, dim=0)
             if min_obj_batch < incumbent_obj:
                 incumbent_obj = min_obj_batch.item()
-                # 仅在需要时 clone，节约时间
                 incumbent_X = X_int[min_idx].clone() 
             if (it+1) % 100 == 0:
                 print(f"Iter {it+1}: Best Obj {incumbent_obj:.4f}, Loss {loss.item():.4f}")
                 
     total_time = time.time() - t0
     print(f"Total Time: {total_time:.2f}s, FPS: {num_steps/total_time:.1f}")
+    
     return incumbent_X, incumbent_obj, total_time
 
 if __name__ == "__main__":
@@ -329,18 +314,18 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     num_steps = args.iters
     
-    if n < 300:
-        batch_size = 5000
+    if n < 150:
+        batch_size = 15000
         num_steps = 1000
     elif n < 500:
         batch_size = 2000
-        num_steps = 2000
+        num_steps = 800
     else:
         batch_size = 500
-        num_steps = 5000
+        num_steps = 2000
     
     lr = 0.02
-    dual_init = 1
+    dual_init = 10
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
@@ -361,19 +346,27 @@ if __name__ == "__main__":
         
     # # check solution
     n, F_np, D_np, _, _ = read_instance(args.instance)
-    # Compute final objective value
     X_best = X_best.cpu().numpy()
     tmp = X_best @ D_np.T @ X_best.T
     obj_best = np.trace(F_np @ tmp)
     
-    # # print the result:
-    # res = []
-    # for i in range(n):
-    #     for j in range(n):
-    #         if X_best[i, j] > 0.5:
-    #             res.append(j+1)
-    #             break
-    # print(res)
+    
+    if obj_best < obj_label:
+        # print the result:
+        res = []
+        for i in range(n):
+            for j in range(n):
+                if X_best[i, j] > 0.5:
+                    res.append(j+1)
+                    break
+        print(res)
+        
+        # write results to file
+        with open(f"./qaplibs/{args.instance}.sln", "w") as f:
+            f.write(f"{n} {int(obj_best)}\n")
+            f.write(' '.join(map(str, res)) + '\n')
+    
+    
     
     # final_obj = 0
     # for i in range(n):
@@ -388,4 +381,4 @@ if __name__ == "__main__":
     gap = (obj_best - obj_label) / obj_label
     
     with open(f"result.txt", "a") as f:
-        f.write(f"{args.instance} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.4f}\n")
+        f.write(f"{args.instance.split('/')[-1]} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.6f}\n")
