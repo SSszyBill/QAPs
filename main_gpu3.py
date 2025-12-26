@@ -330,7 +330,7 @@ if __name__ == "__main__":
     num_steps = args.iters
     
     if n < 300:
-        batch_size = 4000
+        batch_size = 5000
         num_steps = 1000
     elif n < 500:
         batch_size = 2000
