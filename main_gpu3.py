@@ -168,11 +168,11 @@ def read_instance(instance):
             line = f.readline()
             
         n = int(line.split()[0])
-        
+        print(n)
         rest_data = f.read().split()
 
     # 3. 生成迭代器 (注意：这里不再包含 n 了)
-    data_iter = iter(map(int, rest_data))
+    data_iter = iter(map(float, rest_data))
     
     # 4. 直接开始读取矩阵 (不需要再 next(data_iter) 读取 n)
     F_flat = [next(data_iter) for _ in range(n * n)]
@@ -238,26 +238,13 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     
     F = torch.tensor(F_np, device=device, dtype=dtype)
     D = torch.tensor(D_np, device=device, dtype=dtype)
-    
-    # F = F - F.mean()
-    # D = D - D.mean()
-    
-    # # # fill diagonal with 0
-    # # F_diag = torch.diagonal(F)
-    # # D_diag = torch.diagonal(D)
-    
-    # F.fill_diagonal_(0)
-    # D.fill_diagonal_(0)
+
     D_T = D.transpose(-1, -2).contiguous() 
     
     # 初始化变量
     X_rand = np.array(latin_hypercube_matrices(n, batch_size))
     X = torch.tensor(X_rand, device=device, dtype=dtype, requires_grad=True)
     
-    # X = torch.randn((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
-    # X random normal with mean 1/n and std 1
-    # X = torch.randn((batch_size, n, n), device=device, dtype=dtype) * 0.01
-    # X = X.requires_grad_()
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
     
     if optimizer_type.lower() == 'adam':
@@ -327,14 +314,12 @@ if __name__ == "__main__":
     
     n, F_np, D_np, obj_label, x_label_np = read_instance(args.instance)
     
-    print(F_np, D_np)
-    
     batch_size = args.batch_size
     num_steps = args.iters
     
     if n < 150:
-        batch_size = 5000
-        num_steps = 2000
+        batch_size = 20000
+        num_steps = 1000
     elif n < 500:
         batch_size = 2000
         num_steps = 800
@@ -342,8 +327,8 @@ if __name__ == "__main__":
         batch_size = 500
         num_steps = 2000
     
-    lr = 0.03
-    dual_init = 50
+    lr = 0.02
+    dual_init = 1
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
@@ -399,4 +384,4 @@ if __name__ == "__main__":
     gap = (obj_best - obj_label) / obj_label
     
     with open(f"result.txt", "a") as f:
-        f.write(f"{args.instance.split('/')[-1]} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.6f}\n")
+        f.write(f"{args.instance.split('/')[-1]} {solve_time:.2f} {solve_time_raw:.2f} {obj_best:.6f} {obj_label} {gap:.6f}\n")
