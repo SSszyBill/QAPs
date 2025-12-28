@@ -149,6 +149,8 @@ def compute_loss_and_grad(X, Y, F, D_T):
     
     loss = term1 + term2
     
+    # print(term1.item(), term2.item())
+    
     return loss, S, S_sq_minus_S
 
 # -----------------------------------------------------------------------------
@@ -161,16 +163,27 @@ def read_instance(instance):
     solution_file = f"./qaplibs/{instance}.sln"
     
     with open(problem_file, "r") as f:
-        data = f.read().split()        
-    data_iter = iter(map(int, data))
-    n = next(data_iter)
+        line = f.readline()
+        while not line.strip(): # 跳过文件开头的空行(如果有)
+            line = f.readline()
+            
+        n = int(line.split()[0])
+        
+        rest_data = f.read().split()
+
+    # 3. 生成迭代器 (注意：这里不再包含 n 了)
+    data_iter = iter(map(int, rest_data))
+    
+    # 4. 直接开始读取矩阵 (不需要再 next(data_iter) 读取 n)
     F_flat = [next(data_iter) for _ in range(n * n)]
     F_np = np.array(F_flat).reshape(n, n)
+    
     D_flat = [next(data_iter) for _ in range(n * n)]
     D_np = np.array(D_flat).reshape(n, n)
     
     if not os.path.exists(solution_file):
-        return n, F_np, D_np, 1.0, None
+        # 如果没有解文件，返回默认值
+        return n, F_np, D_np, 0.0, None # obj_label 改为 0.0 防止报错
     
     
     with open(solution_file, "r") as f:
@@ -229,9 +242,9 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     # F = F - F.mean()
     # D = D - D.mean()
     
-    # # # # fill diagonal with 0
-    # # # F_diag = torch.diagonal(F)
-    # # # D_diag = torch.diagonal(D)
+    # # # fill diagonal with 0
+    # # F_diag = torch.diagonal(F)
+    # # D_diag = torch.diagonal(D)
     
     # F.fill_diagonal_(0)
     # D.fill_diagonal_(0)
@@ -241,7 +254,10 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     X_rand = np.array(latin_hypercube_matrices(n, batch_size))
     X = torch.tensor(X_rand, device=device, dtype=dtype, requires_grad=True)
     
-    # X = torch.rand((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
+    # X = torch.randn((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
+    # X random normal with mean 1/n and std 1
+    # X = torch.randn((batch_size, n, n), device=device, dtype=dtype) * 0.01
+    # X = X.requires_grad_()
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
     
     if optimizer_type.lower() == 'adam':
@@ -311,12 +327,14 @@ if __name__ == "__main__":
     
     n, F_np, D_np, obj_label, x_label_np = read_instance(args.instance)
     
+    print(F_np, D_np)
+    
     batch_size = args.batch_size
     num_steps = args.iters
     
     if n < 150:
-        batch_size = 15000
-        num_steps = 1000
+        batch_size = 5000
+        num_steps = 2000
     elif n < 500:
         batch_size = 2000
         num_steps = 800
@@ -324,8 +342,8 @@ if __name__ == "__main__":
         batch_size = 500
         num_steps = 2000
     
-    lr = 0.02
-    dual_init = 10
+    lr = 0.03
+    dual_init = 50
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
@@ -351,7 +369,7 @@ if __name__ == "__main__":
     obj_best = np.trace(F_np @ tmp)
     
     
-    if obj_best < obj_label:
+    if obj_best < obj_label or obj_label == 1:
         # print the result:
         res = []
         for i in range(n):

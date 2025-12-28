@@ -5,31 +5,47 @@ import time
 import matplotlib.pyplot as plt
 import gurobipy as gp
 from gurobipy import GRB
+import os
 
 def read_instance(instance):
-    problem_file = f"/home/xjx/A-xjx/QAP/qapdata/{instance}.dat"
-    solution_file = f"/home/xjx/A-xjx/QAP/qapsoln/{instance}.sln"
+    # 请确保路径正确
+    problem_file = f"./qaplibs/{instance}.dat"
+    solution_file = f"./qaplibs/{instance}.sln"
     
     with open(problem_file, "r") as f:
-        data = f.read().split()        
-    data_iter = iter(map(int, data))
-    n = next(data_iter)
+        line = f.readline()
+        while not line.strip(): # 跳过文件开头的空行(如果有)
+            line = f.readline()
+            
+        n = int(line.split()[0])
+        
+        rest_data = f.read().split()
+
+    # 3. 生成迭代器 (注意：这里不再包含 n 了)
+    data_iter = iter(map(int, rest_data))
+    
+    # 4. 直接开始读取矩阵 (不需要再 next(data_iter) 读取 n)
     F_flat = [next(data_iter) for _ in range(n * n)]
     F_np = np.array(F_flat).reshape(n, n)
+    
     D_flat = [next(data_iter) for _ in range(n * n)]
     D_np = np.array(D_flat).reshape(n, n)
+    
+    if not os.path.exists(solution_file):
+        # 如果没有解文件，返回默认值
+        return n, F_np, D_np, 0.0, None # obj_label 改为 0.0 防止报错
+    
     
     with open(solution_file, "r") as f:
         sol_data = f.read().split()
     sol_data_iter = iter(map(int, sol_data))
     n_sol = next(sol_data_iter)
-    assert n_sol == n, "Solution size does not match instance size"
     obj_label = next(sol_data_iter)
     x_label = [next(sol_data_iter) - 1 for _ in range(n)]
     x_label_np = np.zeros((n, n))
     for i in range(n):
         x_label_np[i, x_label[i]] = 1
-        
+
     return n, F_np, D_np, obj_label, x_label_np
 
 def obj_fn_np(F, D, X):
