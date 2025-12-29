@@ -7,7 +7,6 @@ import argparse
 import time
 import os
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-from torch.amp import autocast
 
 # torch.set_float32_matmul_precision('high')
 # -----------------------------------------------------------------------------
@@ -141,20 +140,14 @@ def compute_loss_and_grad(X, Y, F, D_T):
     # 路径: (F @ S) -> M1; (M1 @ D_T) -> M2; Sum(M2 * S)
     M1 = torch.matmul(F, S) 
     M2 = torch.matmul(M1, D_T)
-    # term1 = torch.sum(M2 * S)
-    # term1 = torch.einsum('bij,bij->b', M2, S).mean()
-    term1 = torch.sum(M2.float() * S, dim=(1, 2)).mean()
+    term1 = torch.sum(M2 * S)
     
     # 3. Penalty Term: sum(Y * (S^2 - S))
     # 提前计算 S^2 - S，既用于 Loss 也用于后续 Dual 更新
     S_sq_minus_S = S * (S - 1.0)
-    # term2 = torch.sum(Y * S_sq_minus_S)
-    # term2 = torch.einsum('bij,bij->b', Y, S_sq_minus_S).mean()
-    term2 = torch.sum(Y * S_sq_minus_S, dim=(1, 2)).mean()
+    term2 = torch.sum(Y * S_sq_minus_S)
     
     loss = term1 + term2
-    
-    # print(term1.item(), term2.item())
     
     return loss, S, S_sq_minus_S
 
@@ -168,27 +161,16 @@ def read_instance(instance):
     solution_file = f"./qaplibs/{instance}.sln"
     
     with open(problem_file, "r") as f:
-        line = f.readline()
-        while not line.strip(): # 跳过文件开头的空行(如果有)
-            line = f.readline()
-            
-        n = int(line.split()[0])
-        
-        rest_data = f.read().split()
-
-    # 3. 生成迭代器 (注意：这里不再包含 n 了)
-    data_iter = iter(map(int, rest_data))
-    
-    # 4. 直接开始读取矩阵 (不需要再 next(data_iter) 读取 n)
+        data = f.read().split()        
+    data_iter = iter(map(int, data))
+    n = next(data_iter)
     F_flat = [next(data_iter) for _ in range(n * n)]
     F_np = np.array(F_flat).reshape(n, n)
-    
     D_flat = [next(data_iter) for _ in range(n * n)]
     D_np = np.array(D_flat).reshape(n, n)
     
     if not os.path.exists(solution_file):
-        # 如果没有解文件，返回默认值
-        return n, F_np, D_np, 0.0, None # obj_label 改为 0.0 防止报错
+        return n, F_np, D_np, 1.0, None
     
     
     with open(solution_file, "r") as f:
@@ -238,27 +220,31 @@ def latin_hypercube_matrices(m, n):
 
 def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, optimizer_type='adam'):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    dtype = torch.float32
-    n = F_np.shape[0]
     
+    # 【重要优化】: 使用 Float32。
+    # 消费级显卡 FP64 极慢。除非必要，否则使用 FP32。
+    dtype = torch.float32 
+    
+    # 将常量移动到 GPU，避免循环内拷贝
     F = torch.tensor(F_np, device=device, dtype=dtype)
     D = torch.tensor(D_np, device=device, dtype=dtype)
-
+    
     D_T = D.transpose(-1, -2).contiguous() 
+    n = F_np.shape[0]
     
     # 初始化变量
     X_rand = np.array(latin_hypercube_matrices(n, batch_size))
     X = torch.tensor(X_rand, device=device, dtype=dtype, requires_grad=True)
     
+    # X = torch.rand((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
     
     if optimizer_type.lower() == 'adam':
         optimizer = optim.Adam([X], lr=lr)
     else:
-        # optimizer = optim.RMSprop([X], lr=lr)
-        optimizer = optim.AdamW([X], lr=lr)
+        optimizer = optim.RMSprop([X], lr=lr)
     
-    # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.01)
+    # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.5)
     incumbent_obj = float('inf')
     
     print(f"Starting Optimization [N={n}, Batch={batch_size}, Device={device}]")
@@ -270,16 +256,15 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     
     for it in range(num_steps):
         # set_to_none=True 比 zero_grad() 稍微快一点
-        for _ in range(1):
-            optimizer.zero_grad(set_to_none=True)
-
-            # 1. 计算 Loss 和所需的中间变量
-            # 得益于 torch.compile，这里会融合成极少的 Kernel
-            loss, P, P_sq_minus_P = compute_loss_and_grad(X, Y, F, D_T)
+        optimizer.zero_grad(set_to_none=True)
         
-            loss.backward()
-            optimizer.step()
-            # scheduler.step()
+        # 1. 计算 Loss 和所需的中间变量
+        # 得益于 torch.compile，这里会融合成极少的 Kernel
+        loss, P, P_sq_minus_P = compute_loss_and_grad(X, Y, F, D_T)
+        
+        loss.backward()
+        optimizer.step()
+        # scheduler.step()
         
         # 2. Dual Update & Evaluation
         with torch.no_grad():
@@ -290,6 +275,8 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
             X_int = run_greedy_triton(P)
             
             # 评估目标函数值
+            # (F @ X_int @ D.T) * X_int
+            # 这里的矩阵乘法依旧是瓶颈之一，但对于 batch 计算是必须的
             val = torch.matmul(F, X_int)
             val = torch.matmul(val, D_T)
             obj_vals = torch.sum(val * X_int, dim=(1, 2))
@@ -297,13 +284,13 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
             min_obj_batch, min_idx = torch.min(obj_vals, dim=0)
             if min_obj_batch < incumbent_obj:
                 incumbent_obj = min_obj_batch.item()
+                # 仅在需要时 clone，节约时间
                 incumbent_X = X_int[min_idx].clone() 
             if (it+1) % 100 == 0:
                 print(f"Iter {it+1}: Best Obj {incumbent_obj:.4f}, Loss {loss.item():.4f}")
                 
     total_time = time.time() - t0
     print(f"Total Time: {total_time:.2f}s, FPS: {num_steps/total_time:.1f}")
-    
     return incumbent_X, incumbent_obj, total_time
 
 if __name__ == "__main__":
@@ -324,18 +311,18 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     num_steps = args.iters
     
-    if n < 100:
-        batch_size = 20000
-        num_steps = 500
-    elif n < 500:
+    if n < 300:
         batch_size = 5000
-        num_steps = 500
+        num_steps = 1000
+    elif n < 500:
+        batch_size = 2000
+        num_steps = 2000
     else:
         batch_size = 500
-        num_steps = 2000
+        num_steps = 5000
     
     lr = 0.02
-    dual_init = 0
+    dual_init = 1
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
@@ -356,27 +343,19 @@ if __name__ == "__main__":
         
     # # check solution
     n, F_np, D_np, _, _ = read_instance(args.instance)
+    # Compute final objective value
     X_best = X_best.cpu().numpy()
     tmp = X_best @ D_np.T @ X_best.T
     obj_best = np.trace(F_np @ tmp)
     
-    
-    if obj_best < obj_label or obj_label == 1:
-        # print the result:
-        res = []
-        for i in range(n):
-            for j in range(n):
-                if X_best[i, j] > 0.5:
-                    res.append(j+1)
-                    break
-        print(res)
-        
-        # write results to file
-        with open(f"./qaplibs/{args.instance}.sln", "w") as f:
-            f.write(f"{n} {int(obj_best)}\n")
-            f.write(' '.join(map(str, res)) + '\n')
-    
-    
+    # # print the result:
+    # res = []
+    # for i in range(n):
+    #     for j in range(n):
+    #         if X_best[i, j] > 0.5:
+    #             res.append(j+1)
+    #             break
+    # print(res)
     
     # final_obj = 0
     # for i in range(n):
@@ -390,5 +369,7 @@ if __name__ == "__main__":
     
     gap = (obj_best - obj_label) / obj_label
     
+    instance_name = args.instance.split('/')[-1]
+    
     with open(f"result.txt", "a") as f:
-        f.write(f"{args.instance.split('/')[-1]} {solve_time:.2f} {solve_time_raw:.2f} {obj_best:.6f} {obj_label} {gap:.6f}\n")
+        f.write(f"{instance_name} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.4f}\n")
