@@ -7,6 +7,7 @@ import argparse
 import time
 import os
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from torch.amp import autocast
 
 # torch.set_float32_matmul_precision('high')
 # -----------------------------------------------------------------------------
@@ -140,12 +141,16 @@ def compute_loss_and_grad(X, Y, F, D_T):
     # 路径: (F @ S) -> M1; (M1 @ D_T) -> M2; Sum(M2 * S)
     M1 = torch.matmul(F, S) 
     M2 = torch.matmul(M1, D_T)
-    term1 = torch.sum(M2 * S)
+    # term1 = torch.sum(M2 * S)
+    # term1 = torch.einsum('bij,bij->b', M2, S).mean()
+    term1 = torch.sum(M2.float() * S, dim=(1, 2)).mean()
     
     # 3. Penalty Term: sum(Y * (S^2 - S))
     # 提前计算 S^2 - S，既用于 Loss 也用于后续 Dual 更新
     S_sq_minus_S = S * (S - 1.0)
-    term2 = torch.sum(Y * S_sq_minus_S)
+    # term2 = torch.sum(Y * S_sq_minus_S)
+    # term2 = torch.einsum('bij,bij->b', Y, S_sq_minus_S).mean()
+    term2 = torch.sum(Y * S_sq_minus_S, dim=(1, 2)).mean()
     
     loss = term1 + term2
     
@@ -168,11 +173,11 @@ def read_instance(instance):
             line = f.readline()
             
         n = int(line.split()[0])
-        print(n)
+        
         rest_data = f.read().split()
 
     # 3. 生成迭代器 (注意：这里不再包含 n 了)
-    data_iter = iter(map(float, rest_data))
+    data_iter = iter(map(int, rest_data))
     
     # 4. 直接开始读取矩阵 (不需要再 next(data_iter) 读取 n)
     F_flat = [next(data_iter) for _ in range(n * n)]
@@ -233,7 +238,7 @@ def latin_hypercube_matrices(m, n):
 
 def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, optimizer_type='adam'):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    dtype = torch.float32 
+    dtype = torch.float32
     n = F_np.shape[0]
     
     F = torch.tensor(F_np, device=device, dtype=dtype)
@@ -250,7 +255,8 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     if optimizer_type.lower() == 'adam':
         optimizer = optim.Adam([X], lr=lr)
     else:
-        optimizer = optim.RMSprop([X], lr=lr)
+        # optimizer = optim.RMSprop([X], lr=lr)
+        optimizer = optim.AdamW([X], lr=lr)
     
     # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.01)
     incumbent_obj = float('inf')
@@ -264,15 +270,16 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     
     for it in range(num_steps):
         # set_to_none=True 比 zero_grad() 稍微快一点
-        optimizer.zero_grad(set_to_none=True)
+        for _ in range(1):
+            optimizer.zero_grad(set_to_none=True)
+
+            # 1. 计算 Loss 和所需的中间变量
+            # 得益于 torch.compile，这里会融合成极少的 Kernel
+            loss, P, P_sq_minus_P = compute_loss_and_grad(X, Y, F, D_T)
         
-        # 1. 计算 Loss 和所需的中间变量
-        # 得益于 torch.compile，这里会融合成极少的 Kernel
-        loss, P, P_sq_minus_P = compute_loss_and_grad(X, Y, F, D_T)
-        
-        loss.backward()
-        optimizer.step()
-        # scheduler.step()
+            loss.backward()
+            optimizer.step()
+            # scheduler.step()
         
         # 2. Dual Update & Evaluation
         with torch.no_grad():
@@ -317,18 +324,18 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     num_steps = args.iters
     
-    if n < 150:
+    if n < 100:
         batch_size = 20000
-        num_steps = 1000
+        num_steps = 500
     elif n < 500:
-        batch_size = 2000
-        num_steps = 800
+        batch_size = 5000
+        num_steps = 500
     else:
         batch_size = 500
         num_steps = 2000
     
     lr = 0.02
-    dual_init = 1
+    dual_init = 0
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
