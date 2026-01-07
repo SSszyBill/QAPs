@@ -24,10 +24,47 @@ double opt;
 double somme_sol = 0.0;
 
 /*************** L'Ecuyer random number generator ***************/
+static int x10 = 12345, x11 = 67890, x12 = 13579, 
+           x20 = 24680, x21 = 98765, x22 = 43210;
+
+/* Function to set random seed */
+void set_random_seed(int seed1, int seed2, int seed3, 
+                     int seed4, int seed5, int seed6)
+{
+  x10 = seed1; x11 = seed2; x12 = seed3;
+  x20 = seed4; x21 = seed5; x22 = seed6;
+  
+  /* Ensure seeds are in valid range */
+  const int m = 2147483647; const int m2 = 2145483479;
+  if (x10 < 1) x10 = 1; if (x10 >= m) x10 = x10 % m;
+  if (x11 < 1) x11 = 1; if (x11 >= m) x11 = x11 % m;
+  if (x12 < 1) x12 = 1; if (x12 >= m) x12 = x12 % m;
+  if (x20 < 1) x20 = 1; if (x20 >= m2) x20 = x20 % m2;
+  if (x21 < 1) x21 = 1; if (x21 >= m2) x21 = x21 % m2;
+  if (x22 < 1) x22 = 1; if (x22 >= m2) x22 = x22 % m2;
+}
+
+/* Set random seed from a single integer (simpler interface) */
+void set_random_seed_simple(int seed)
+{
+  /* Use seed to generate 6 different initial values */
+  int s1 = seed;
+  int s2 = (s1 * 1103515245 + 12345) & 0x7fffffff;
+  int s3 = (s2 * 1103515245 + 12345) & 0x7fffffff;
+  int s4 = (s3 * 1103515245 + 12345) & 0x7fffffff;
+  int s5 = (s4 * 1103515245 + 12345) & 0x7fffffff;
+  int s6 = (s5 * 1103515245 + 12345) & 0x7fffffff;
+  
+  set_random_seed(s1 % 2147483647 + 1, 
+                  s2 % 2147483647 + 1, 
+                  s3 % 2147483647 + 1,
+                  s4 % 2145483479 + 1,
+                  s5 % 2145483479 + 1,
+                  s6 % 2145483479 + 1);
+}
+
 double rando()
  {
-  static int x10 = 12345, x11 = 67890, x12 = 13579, 
-             x20 = 24680, x21 = 98765, x22 = 43210; 
   const int m = 2147483647; const int m2 = 2145483479; 
   const int a12= 63308; const int q12=33921; const int r12=12979; 
   const int a13=-183326; const int q13=11714; const int r13=2883; 
@@ -260,12 +297,27 @@ int main(int argc, char *argv[])
   char log_filename[300];  /* Buffer for log filename */
   int i, j;
   char bidon[1000];
+  int random_seed = 0;  /* Random seed, 0 means use time */
 
   if (argc < 2) {
-      printf("Usage: %s <data_file_path>\n", argv[0]);
+      printf("Usage: %s <data_file_path> [random_seed]\n", argv[0]);
+      printf("  random_seed: optional integer seed (default: use current time)\n");
       return 1;
   }
   file_path_arg = argv[1];
+  
+  /* Parse random seed if provided */
+  if (argc >= 3) {
+      random_seed = atoi(argv[2]);
+      printf("Using random seed: %d\n", random_seed);
+  } else {
+      /* Use current time as seed if not provided */
+      random_seed = (int)time(NULL);
+      printf("Using time-based random seed: %d\n", random_seed);
+  }
+  
+  /* Initialize random number generator */
+  set_random_seed_simple(random_seed);
 
   /* 1. Extract instance name */
   extract_instance_name(file_path_arg, instance_name);
