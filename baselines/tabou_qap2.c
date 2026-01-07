@@ -5,6 +5,7 @@
  2. CLI arguments for filename
  3. Automatic Timing
  4. Result Logging (Instance Name, Time, Obj)
+ 5. Log each best solution with timestamp
 ****************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,7 +91,9 @@ void tabu_search(int n,                  /* problem size */
                  double *best_cost,      /* cost */
                  int tabu_duration,      
                  int aspiration,         
-                 int nr_iterations)       
+                 int nr_iterations,
+                 clock_t start_time,     /* start time for timing */
+                 FILE* log_file)         /* file to log improvements */
            
  
  {type_vector p;                        /* current solution */
@@ -103,6 +106,7 @@ void tabu_search(int n,                  /* problem size */
   int autorized;                        /* move not tabu? */
   int aspired;                          /* move forced? */
   int already_aspired;                  /* in case many moves forced */
+  double elapsed_time;                  /* time elapsed */
 
   /***************** dynamic memory allocation *******************/
   p = (int*)calloc(n, sizeof(int));
@@ -168,7 +172,21 @@ void tabu_search(int n,                  /* problem size */
          current_iteration + (int)(cube(rando())*tabu_duration);
 
       if (current_cost < *best_cost)
-       {*best_cost = current_cost;
+       {
+        /* Calculate elapsed time */
+        elapsed_time = (double)(clock() - start_time) / CLOCKS_PER_SEC;
+        
+        /* Print to console */
+        printf("New best cost: %.6f at iteration %d (time: %.6f s)\n", 
+               current_cost, current_iteration, elapsed_time);
+        
+        /* Log to file */
+        if (log_file != NULL) {
+          fprintf(log_file, "%.6f %.6f\n", elapsed_time, current_cost);
+          fflush(log_file);  /* Ensure immediate write */
+        }
+        
+        *best_cost = current_cost;
         for (k = 0; k < n; k = k+1) best_sol[k] = p[k];
        };
 
@@ -235,9 +253,11 @@ int main(int argc, char *argv[])
   double total_time_elapsed;
 
   FILE* data_file;
-  FILE* result_file;      
+  FILE* result_file;
+  FILE* improvement_log;
   char* file_path_arg;
   char instance_name[256]; /* Buffer for extracted name */
+  char log_filename[300];  /* Buffer for log filename */
   int i, j;
   char bidon[1000];
 
@@ -279,8 +299,18 @@ int main(int argc, char *argv[])
     
   fclose(data_file);
 
+  /* Open improvement log file */
+  sprintf(log_filename, "%s_improvements.txt", instance_name);
+  improvement_log = fopen(log_filename, "w");
+  if (improvement_log == NULL) {
+      printf("Warning: Could not open improvement log file %s\n", log_filename);
+  } else {
+      fprintf(improvement_log, "# Time(s) ObjectiveValue\n");
+      fflush(improvement_log);
+  }
+
   int nr_iterations = 1000 * n;
-  int nr_resolutions = 10;
+  int nr_resolutions = 1;
   
   /* --- START TIMING --- */
   start_time = clock();
@@ -292,7 +322,9 @@ int main(int argc, char *argv[])
     tabu_search(n, a, b,                     
                solution, &cost,              
                8*n, n*n*5,                   
-               nr_iterations);               
+               nr_iterations,
+               start_time,
+               improvement_log);               
 
     if (cost < global_best_cost) {
         global_best_cost = cost;
@@ -311,6 +343,14 @@ int main(int argc, char *argv[])
   printf("Global Best Cost: %f\n", global_best_cost);
   printf("Total Time: %f seconds\n", total_time_elapsed);
 
+  /* Write final best solution and end time to improvement log */
+  if (improvement_log != NULL) {
+      fprintf(improvement_log, "%.6f %.6f\n", total_time_elapsed, global_best_cost);
+      fflush(improvement_log);
+      fclose(improvement_log);
+      printf("Improvement log saved to %s\n", log_filename);
+  }
+
   /* Write result to result.txt (Append Mode) */
   result_file = fopen("tabou_qap2_result.txt", "a");
   if (result_file == NULL) {
@@ -319,7 +359,7 @@ int main(int argc, char *argv[])
       /* Format: instance_name, time, best_obj */
       fprintf(result_file, "%s %.6f %.6f\n", instance_name, total_time_elapsed, global_best_cost);
       fclose(result_file);
-      printf("Result saved to result.txt\n");
+      printf("Result saved to tabou_qap2_result.txt\n");
   }
 
   free(solution);
