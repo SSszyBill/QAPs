@@ -29,3 +29,8 @@ done
 
 
 
+# 不使用时间限制（默认）
+./BMA2 data_file.dat
+
+# 使用时间限制（例如60秒）
+./BMA2 data_file.dat 60.0

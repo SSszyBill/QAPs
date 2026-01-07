@@ -28,6 +28,21 @@ long iteration = 0;
 unsigned long long resulting_cost = 99999999999ULL;
 long target;
 
+// Global variables for improvement logging
+ofstream* improvement_log_file = NULL;
+clock_t global_start_time = 0;
+
+
+// Function to log improvement when new best solution is found
+void log_improvement(unsigned long long new_cost)
+{
+    if (improvement_log_file != NULL && improvement_log_file->is_open()) {
+        double elapsed_time = (double)(clock() - global_start_time) / CLOCKS_PER_SEC;
+        *improvement_log_file << elapsed_time << " " << new_cost << endl;
+        improvement_log_file->flush();
+        cout << "New best cost: " << new_cost << " at time: " << elapsed_time << " s" << endl;
+    }
+}
 
 void output(long n, string f_name, long all_sol[],  int num_runs, long best_cost, type_vector & s, double times[])
 {
@@ -547,6 +562,7 @@ void replacement_other(long n, type_vector & child_sol, long  child_cost, type_m
       resulting_cost = child_cost;
       for(i=1; i<=n; i++)
        best_solution_found[i] = child_sol[i];
+      log_improvement(resulting_cost);
    }
 }
 
@@ -580,6 +596,7 @@ void best_individual(int n, type_matrix_s pop, long* pop_costs, int pop_size)
        for(int j=1; j<=n; j++)
          best_solution_found[j] = pop[b][j];
        resulting_cost= best;
+       log_improvement(resulting_cost);
     }
 }
 int best_index(int pop_size,long* pop_costs)
@@ -719,9 +736,19 @@ int main(int argc, char** argv)
 
 // 1. 检查是否传入了文件路径
    if (argc < 2) {
-       cout << "Usage: " << argv[0] << " <path_to_data_file>" << endl;
-       cout << "Example: " << argv[0] << " /home/xjx/data/dre15.dat" << endl;
+       cout << "Usage: " << argv[0] << " <path_to_data_file> [time_limit]" << endl;
+       cout << "Example: " << argv[0] << " /home/xjx/data/dre15.dat 60.0" << endl;
+       cout << "  time_limit: optional time limit in seconds (default: no limit)" << endl;
        return 1;
+   }
+   
+   // Parse time limit if provided
+   double time_limit = 0.0;  // 0 means no limit
+   if (argc >= 3) {
+       time_limit = atof(argv[2]);
+       if (time_limit > 0.0) {
+           cout << "Time limit set to: " << time_limit << " seconds" << endl;
+       }
    }
    // 2. 从路径中提取纯文件名 (核心逻辑)
    string filepath = argv[1];
@@ -775,6 +802,19 @@ int main(int argc, char** argv)
     }
 
   srand ( time(NULL) );
+  
+  // Create improvement log file
+  string improvement_log_filename = pure_name + "_bma_improvements.txt";
+  improvement_log_file = new ofstream(improvement_log_filename.c_str());
+  if (improvement_log_file->is_open()) {
+      *improvement_log_file << "# Time(s) ObjectiveValue" << endl;
+      improvement_log_file->flush();
+      cout << "Improvement log will be saved to: " << improvement_log_filename << endl;
+  } else {
+      cout << "Warning: Could not open improvement log file " << improvement_log_filename << endl;
+      delete improvement_log_file;
+      improvement_log_file = NULL;
+  }
 
 
 
@@ -843,6 +883,7 @@ int main(int argc, char** argv)
      timet = clock();
      time = clock();
      start = clock();
+     global_start_time = clock();  // Set global start time for improvement logging
 
      num_mutations = 0;
      num_counter = 0;
@@ -855,6 +896,15 @@ int main(int argc, char** argv)
 
      for (gener = 0; gener <num_generations; gener = gener+1)
      {
+       // Check time limit
+       if (time_limit > 0.0) {
+           double elapsed_time = (double)(clock() - global_start_time) / CLOCKS_PER_SEC;
+           if (elapsed_time >= time_limit) {
+               cout << "Time limit (" << time_limit << " s) reached at generation " << gener << endl;
+               goto end;
+           }
+       }
+       
        if(vrijeme>7200)
            goto end;
        if((clock()-timet)/static_cast<double>(CLOCKS_PER_SEC)>0 and vrijeme_p<=0)
@@ -914,6 +964,17 @@ int main(int argc, char** argv)
             best_solution_ever[i] = best_solution_found[i];
       }
    }
+
+  // Write final best solution and end time to improvement log
+  if (improvement_log_file != NULL && improvement_log_file->is_open()) {
+      double total_time = (double)(clock() - global_start_time) / CLOCKS_PER_SEC;
+      *improvement_log_file << total_time << " " << best_cost_ever << endl;
+      improvement_log_file->flush();
+      improvement_log_file->close();
+      delete improvement_log_file;
+      improvement_log_file = NULL;
+      cout << "Improvement log saved with final result" << endl;
+  }
 
   //out.close();
   output(n, file_name, all_solutions, num_runs, best_cost_ever, best_solution_ever,  times);

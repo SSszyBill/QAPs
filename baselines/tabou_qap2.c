@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
       fflush(improvement_log);
   }
 
-  int nr_iterations = 1000 * n;
+  int nr_iterations = 100000 * n;
   int nr_resolutions = 1;
   
   /* --- START TIMING --- */
