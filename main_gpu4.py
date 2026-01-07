@@ -6,17 +6,14 @@ import numpy as np
 import argparse
 import time
 import os
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 
 def run_greedy_triton(M):
     assignment = torch.zeros_like(M)
     assignment = greedy_round_large_batch_torch(M)
-        
     return assignment
 
 def greedy_round_large_batch_torch(M):
-    """针对大 N 的 PyTorch 批处理实现"""
     bs, n, _ = M.shape
     assignment = torch.zeros_like(M)
     M_temp = M.clone()
@@ -28,46 +25,33 @@ def greedy_round_large_batch_torch(M):
         rows = idx.div(n, rounding_mode='floor')
         cols = idx % n
         assignment[batch_indices, rows, cols] = 1.0
-        # 这种 masking 在 PyTorch 中比较慢，因为涉及大量内存拷贝
         M_temp[batch_indices, rows, :] = -1e10
         M_temp[batch_indices, :, cols] = -1e10
     return assignment
 
-# -----------------------------------------------------------------------------
-# 2. 算子融合与计算图优化 (PyTorch 2.0)
-# -----------------------------------------------------------------------------
-
-# 使用 torch.compile 替代 torch.jit.script
-# mode="reduce-overhead" 专门针对这种小尺寸矩阵、多次迭代的场景优化 CUDA Graph 启动
-@torch.compile
 def sinkhorn_step(log_alpha, num_iters: int = 10):
-    log_S = log_alpha
+    log_S = log_alpha / 0.5
     for _ in range(num_iters):
-        # Row Normalization
         log_S = log_S - torch.logsumexp(log_S, dim=-1, keepdim=True)
-        # Column Normalization
         log_S = log_S - torch.logsumexp(log_S, dim=-2, keepdim=True)
     return torch.exp(log_S)
 
-@torch.compile
 def compute_loss_and_grad(X, Y, F, D_T):
     """
     将 Loss 计算和梯度相关的操作融合，减少中间变量显存占用。
     """
-    # 1. Sinkhorn Forward
     S = sinkhorn_step(X, num_iters=20)
     
-    # 2. QAP Objective: Trace(F S D^T S^T)
-    # 利用矩阵乘法结合律减少计算量
-    # 路径: (F @ S) -> M1; (M1 @ D_T) -> M2; Sum(M2 * S)
     M1 = torch.matmul(F, S) 
     M2 = torch.matmul(M1, D_T)
-    term1 = torch.sum(M2 * S)
+    # term1 = torch.sum(M2 * S)
+    term1 = torch.einsum('bij,bij->b', M2, S).mean()
     
     # 3. Penalty Term: sum(Y * (S^2 - S))
     # 提前计算 S^2 - S，既用于 Loss 也用于后续 Dual 更新
     S_sq_minus_S = S * (S - 1.0)
-    term2 = torch.sum(Y * S_sq_minus_S)
+    # term2 = torch.sum(Y * S_sq_minus_S)
+    term2 = torch.einsum('bij,bij->b', Y, S_sq_minus_S).mean()
     
     loss = term1 + term2
     
@@ -143,11 +127,8 @@ def latin_hypercube_matrices(m, n):
 def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, optimizer_type='adam', args=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    # 【重要优化】: 使用 Float32。
-    # 消费级显卡 FP64 极慢。除非必要，否则使用 FP32。
     dtype = torch.float32 
     
-    # 将常量移动到 GPU，避免循环内拷贝
     F = torch.tensor(F_np, device=device, dtype=dtype)
     D = torch.tensor(D_np, device=device, dtype=dtype)
     
@@ -165,15 +146,13 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     X_rand = np.array(latin_hypercube_matrices(n, batch_size))
     X = torch.tensor(X_rand, device=device, dtype=dtype, requires_grad=True)
     
-    # X = torch.rand((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
     
     if optimizer_type.lower() == 'adam':
         optimizer = optim.Adam([X], lr=lr)
     else:
-        optimizer = optim.RMSprop([X], lr=lr)
+        optimizer = optim.RMSprop([X], lr=0.003)
     
-    # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.5)
     incumbent_obj = float('inf')
     
     print(f"Starting Optimization [N={n}, Batch={batch_size}, Device={device}]")
@@ -185,7 +164,7 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     
     for it in range(num_steps):
         # set_to_none=True 比 zero_grad() 稍微快一点
-        optimizer.zero_grad(set_to_none=True)
+        optimizer.zero_grad()
         
         # 1. 计算 Loss 和所需的中间变量
         # 得益于 torch.compile，这里会融合成极少的 Kernel
@@ -195,20 +174,10 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
         optimizer.step()
         # scheduler.step()
         
-        # 2. Dual Update & Evaluation
         with torch.no_grad():
-            # In-place update
             Y.add_(P_sq_minus_P, alpha=lr)
             
-            # 使用优化的 Triton Kernel 进行 Rounding
             X_int = run_greedy_triton(P)
-            
-            # 评估目标函数值
-            # (F @ X_int @ D.T) * X_int
-            # 这里的矩阵乘法依旧是瓶颈之一，但对于 batch 计算是必须的
-            # val = torch.matmul(F, X_int)
-            # val = torch.matmul(val, D_T)
-            # obj_vals = torch.sum(val * X_int, dim=(1, 2))
             val = torch.matmul(F, X_int)
             val = torch.matmul(val, D_T)
             obj_vals = torch.sum(val * X_int, dim=(1, 2))
@@ -216,7 +185,6 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
             min_obj_batch, min_idx = torch.min(obj_vals, dim=0)
             if min_obj_batch < incumbent_obj:
                 incumbent_obj = min_obj_batch.item()
-                # 仅在需要时 clone，节约时间
                 incumbent_X = X_int[min_idx].clone() 
             if (it+1) % 100 == 0:
                 print(f"Iter {it+1}: Best Obj {incumbent_obj:.4f}, Loss {loss.item():.4f}")
@@ -242,8 +210,8 @@ if __name__ == "__main__":
 
     # print(np.sum(np.diag(F_np)), np.sum(np.diag(D_np)))
     
-    F_np = F_np / np.linalg.norm(F_np, ord='fro')
-    D_np = D_np / np.linalg.norm(D_np, ord='fro')
+    # F_np = F_np / np.linalg.norm(F_np, ord='fro')
+    # D_np = D_np / np.linalg.norm(D_np, ord='fro')
     
     # # kronecker product of F and D 
     # FD = np.kron(F_np, D_np)
@@ -256,8 +224,8 @@ if __name__ == "__main__":
     num_steps = args.iters
     
     if n < 300:
-        batch_size = 15000
-        num_steps = 1000
+        batch_size = 1
+        num_steps = 20000
     elif n < 500:
         batch_size = 2000
         num_steps = 2000
@@ -265,8 +233,8 @@ if __name__ == "__main__":
         batch_size = 500
         num_steps = 5000
     
-    lr = 0.02
-    dual_init = 0.3
+    lr = 0.003
+    dual_init = 1
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
