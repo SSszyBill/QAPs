@@ -130,7 +130,8 @@ void tabu_search(int n,                  /* problem size */
                  int aspiration,         
                  int nr_iterations,
                  clock_t start_time,     /* start time for timing */
-                 FILE* log_file)         /* file to log improvements */
+                 FILE* log_file,         /* file to log improvements */
+                 double time_limit)      /* time limit in seconds (0 = no limit) */
            
  
  {type_vector p;                        /* current solution */
@@ -144,6 +145,7 @@ void tabu_search(int n,                  /* problem size */
   int aspired;                          /* move forced? */
   int already_aspired;                  /* in case many moves forced */
   double elapsed_time;                  /* time elapsed */
+  int time_limit_reached = FALSE;       /* flag for time limit */
 
   /***************** dynamic memory allocation *******************/
   p = (int*)calloc(n, sizeof(int));
@@ -171,6 +173,16 @@ void tabu_search(int n,                  /* problem size */
   for (current_iteration = 1; current_iteration <= nr_iterations; 
        current_iteration = current_iteration + 1)
    {
+    /* Check time limit */
+    if (time_limit > 0.0) {
+      elapsed_time = (double)(clock() - start_time) / CLOCKS_PER_SEC;
+      if (elapsed_time >= time_limit) {
+        time_limit_reached = TRUE;
+        printf("Time limit (%.2f s) reached at iteration %d\n", time_limit, current_iteration);
+        break;
+      }
+    }
+    
     i_retained = -1;       
     j_retained = -1;
     min_delta = infinite;
@@ -298,10 +310,12 @@ int main(int argc, char *argv[])
   int i, j;
   char bidon[1000];
   int random_seed = 0;  /* Random seed, 0 means use time */
+  double time_limit = 0.0;  /* Time limit in seconds, 0 = no limit */
 
   if (argc < 2) {
-      printf("Usage: %s <data_file_path> [random_seed]\n", argv[0]);
+      printf("Usage: %s <data_file_path> [random_seed] [time_limit]\n", argv[0]);
       printf("  random_seed: optional integer seed (default: use current time)\n");
+      printf("  time_limit: optional time limit in seconds (default: no limit)\n");
       return 1;
   }
   file_path_arg = argv[1];
@@ -314,6 +328,14 @@ int main(int argc, char *argv[])
       /* Use current time as seed if not provided */
       random_seed = (int)time(NULL);
       printf("Using time-based random seed: %d\n", random_seed);
+  }
+  
+  /* Parse time limit if provided */
+  if (argc >= 4) {
+      time_limit = atof(argv[3]);
+      if (time_limit > 0.0) {
+          printf("Time limit set to: %.2f seconds\n", time_limit);
+      }
   }
   
   /* Initialize random number generator */
@@ -376,7 +398,8 @@ int main(int argc, char *argv[])
                8*n, n*n*5,                   
                nr_iterations,
                start_time,
-               improvement_log);               
+               improvement_log,
+               time_limit);               
 
     if (cost < global_best_cost) {
         global_best_cost = cost;
