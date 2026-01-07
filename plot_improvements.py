@@ -53,15 +53,10 @@ def get_method_name(filename):
     """Extract method name from filename."""
     basename = os.path.basename(filename)
     # Remove common suffixes
-    if '_improvements.txt' in basename:
-        basename = basename.replace('_improvements.txt', '')
-    if '_bma_improvements.txt' in basename:
-        basename = basename.replace('_bma_improvements.txt', '')
-        return basename + ' (BMA2)'
-    # Try to extract instance name and method
-    if '_bma_' in basename:
-        parts = basename.split('_bma_')
-        return parts[0] + ' (BMA2)'
+    if 'rots' in basename:
+        return 'Ro-TS'
+    if 'bma' in basename:
+        return 'BMA'
     # Default: use filename without extension
     return os.path.splitext(basename)[0]
 
@@ -85,6 +80,7 @@ def plot_improvements(files, output_file=None, title=None, normalize=False,
             continue
         
         method_name = get_method_name(filename)
+        title = filename.split('_')[0]
         
         # Normalize objectives if requested (normalize to [0, 1] range)
         if normalize:
