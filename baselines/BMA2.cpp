@@ -804,7 +804,7 @@ int main(int argc, char** argv)
   srand ( time(NULL) );
   
   // Create improvement log file
-  string improvement_log_filename = pure_name + "_bma_improvements.txt";
+  string improvement_log_filename = "/home/xjx/A-xjx/QAPs/results/baseline/" + pure_name + "_bma_improvements.txt";
   improvement_log_file = new ofstream(improvement_log_filename.c_str());
   if (improvement_log_file->is_open()) {
       *improvement_log_file << "# Time(s) ObjectiveValue" << endl;
