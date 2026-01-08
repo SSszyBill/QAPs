@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
   fclose(data_file);
 
   /* Open improvement log file */
-  sprintf(log_filename, "%s_improvements.txt", instance_name);
+  sprintf(log_filename, "results/baseline/%s_rots_improvements.txt", instance_name);
   improvement_log = fopen(log_filename, "w");
   if (improvement_log == NULL) {
       printf("Warning: Could not open improvement log file %s\n", log_filename);
@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
   }
 
   /* Write result to result.txt (Append Mode) */
-  result_file = fopen("tabou_qap2_result.txt", "a");
+  result_file = fopen("results/baseline/tabou_qap2_result.txt", "a");
   if (result_file == NULL) {
       printf("Error opening result.txt for writing.\n");
   } else {
