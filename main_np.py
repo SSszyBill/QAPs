@@ -8,9 +8,10 @@ from gurobipy import GRB
 import os
 
 def read_instance(instance):
-    # 请确保路径正确
-    problem_file = f"./qaplibs/{instance}.dat"
-    solution_file = f"./qaplibs/{instance}.sln"
+    # 使用绝对路径
+    base_path = "/home/opt/szy/QAP/xjxqap/QAPs/qaplibs/"
+    problem_file = f"{base_path}qapdata/{instance}.dat"
+    solution_file = f"{base_path}qapsoln/{instance}.sln"
     
     with open(problem_file, "r") as f:
         line = f.readline()

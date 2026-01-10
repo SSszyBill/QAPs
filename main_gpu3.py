@@ -110,8 +110,9 @@ def compute_loss_and_grad(X, Y, F, D_T):
 
 def read_instance(instance):
     # 请确保路径正确
-    problem_file = f"./qaplibs/{instance}.dat"
-    solution_file = f"./qaplibs/{instance}.sln"
+    base_path = "/home/opt/szy/QAP/xjxqap/QAPs/qaplibs/"
+    problem_file = f"{base_path}qapdata/{instance}.dat"
+    solution_file = f"{base_path}qapsoln/{instance}.sln"
     
     with open(problem_file, "r") as f:
         data = f.read().split()        
@@ -321,7 +322,7 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--instance', type=str, default="nug12")
-    parser.add_argument('--batch_size', type=int, default=1000)
+    parser.add_argument('--batch_size', type=int, default=10)
     parser.add_argument('--iters', type=int, default=2000)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--optimizer', type=str, default="rmsprop", choices=["rmsprop", "adam"])
@@ -338,13 +339,13 @@ if __name__ == "__main__":
     num_steps = args.iters
     
     if n < 300:
-        batch_size = 2000
+        batch_size = 2
         num_steps = 1000
     elif n < 500:
-        batch_size = 1000
+        batch_size = 2
         num_steps = 1200
     else:
-        batch_size = 1000
+        batch_size = 2
         num_steps = 1000
     
     lr = 0.02
