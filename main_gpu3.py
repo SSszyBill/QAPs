@@ -102,8 +102,8 @@ def compute_loss_and_grad(X, Y, F, D_T):
     
     # 3. Penalty Term: sum(Y * (S^2 - S))
     # 提前计算 S^2 - S，既用于 Loss 也用于后续 Dual 更新
-    # S_sq_minus_S = S * (S - 1.0)
-    S_sq_minus_S = S * torch.log(S+1e-30)
+    S_sq_minus_S = S * (S - 1.0)
+    # S_sq_minus_S = S * torch.log(S+1e-30)
     # term2 = torch.sum(Y * S_sq_minus_S)
     term2 = torch.sum(Y * S_sq_minus_S, dim=(1, 2)).mean()    
     loss = term1 + term2
