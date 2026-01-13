@@ -84,7 +84,13 @@ def compute_loss_and_grad(X, Y, F, D_T):
     将 Loss 计算和梯度相关的操作融合，减少中间变量显存占用。
     """
     # 1. Sinkhorn Forward
-    S = sinkhorn_step(X, num_iters=50)
+    n = X.shape[-1]
+    if n > 500:
+        num_iters = 25
+    else:
+        num_iters = 50
+    
+    S = sinkhorn_step(X, num_iters=num_iters)
     
     # 2. QAP Objective: Trace(F S D^T S^T)
     # 利用矩阵乘法结合律减少计算量
@@ -172,7 +178,7 @@ def latin_hypercube_matrices(m, n):
     return matrices
 
 
-def spectral_initialization_qap(F, D, k=None):
+def spectral_initialization_qap(F, D, num=None):
     """
     Runs spectral initialization for the Quadratic Assignment Problem (QAP).
     
@@ -195,21 +201,19 @@ def spectral_initialization_qap(F, D, k=None):
 
     P_list = []
     
-    if k is None:
+    if num is None:
         k_list = np.arange(n) 
     else:
-        k_list = [k]
+        k_list = np.arange(min(num, n)) + 1
     
+    val_F, vec_F = scipy.linalg.eigh(F)
+    val_D, vec_D = scipy.linalg.eigh(D)
+    idx_F = np.argsort(val_F)[::-1]
+    idx_D = np.argsort(val_D)[::-1]
+    
+    U_F = vec_F[:, idx_F]
+    U_D = vec_D[:, idx_D]
     for k in k_list:
-        val_F, vec_F = scipy.linalg.eigh(F)
-        val_D, vec_D = scipy.linalg.eigh(D)
-
-        idx_F = np.argsort(val_F)[::-1]
-        idx_D = np.argsort(val_D)[::-1]
-        
-        U_F = vec_F[:, idx_F]
-        U_D = vec_D[:, idx_D]
-        
         U_F_k = U_F[:, :k]
         U_D_k = U_D[:, :k]
 
@@ -220,8 +224,7 @@ def spectral_initialization_qap(F, D, k=None):
         P = np.zeros((n, n))
         P[row_ind, col_ind] = 1
         P_list.append(P)
-    
-    
+
     return np.array(P_list)
 
 def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, optimizer_type='adam', x_label_np=None):
@@ -229,27 +232,15 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     
     dtype = torch.float32 
     
+    
+    t0 = time.time()
     F = torch.tensor(F_np, device=device, dtype=dtype)
     D = torch.tensor(D_np, device=device, dtype=dtype)
     
     D_T = D.transpose(-1, -2).contiguous() 
     n = F_np.shape[0]
     
-    # # 初始化变量
-    # X_rand = np.array(latin_hypercube_matrices(n, batch_size))
-    # X = torch.tensor(X_rand, device=device, dtype=dtype, requires_grad=True)
-    # if x_label_np is not None:
-    #     X = torch.rand((batch_size, n, n), device=device, dtype=dtype)
-    #     # 在x_label_np对应的元素位置上添加少量噪声
-    #     x_label_tensor = torch.tensor(x_label_np, device=device, dtype=dtype)
-    #     noise = torch.randn((batch_size, n, n), device=device, dtype=dtype) * 1
-    #     X = X*0.3 + x_label_tensor.unsqueeze(0) * noise
-    #     X = torch.clamp(X, 0.0, 1.0)
-    #     X.requires_grad_(True)
-    # else:
-    #     X = torch.rand((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
-    
-    X_spectral = spectral_initialization_qap(F_np, D_np)
+    X_spectral = spectral_initialization_qap(F_np, D_np, batch_size)
     X = torch.tensor(X_spectral, device=device, dtype=dtype)
     # add random samples to fill the batch
     if X.shape[0] < batch_size:
@@ -279,27 +270,22 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     # Warmup (对于 Triton 和 torch.compile 很重要)
     _ = compute_loss_and_grad(X[:2], Y[:2], F, D_T)
     
-    t0 = time.time()
+    
+    incumbents = []
+    incum_time = []
     
     for it in range(num_steps):
-        # set_to_none=True 比 zero_grad() 稍微快一点
         optimizer.zero_grad(set_to_none=True)
         
-        # 1. 计算 Loss 和所需的中间变量
-        # 得益于 torch.compile，这里会融合成极少的 Kernel
         loss, P, P_sq_minus_P, term1, term2 = compute_loss_and_grad(X, Y, F, D_T)
         
         loss.backward()
         optimizer.step()
-        # scheduler.step()
         
         # 2. Dual Update & Evaluation
         with torch.no_grad():
             # In-place update
             Y.add_(P_sq_minus_P, alpha=lr)
-            
-            # P = sinkhorn_step(P, num_iters=30)
-            # 使用优化的 Triton Kernel 进行 Rounding
             X_int = run_greedy_triton(P)
             
             val = torch.matmul(F, X_int)
@@ -309,14 +295,17 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
             min_obj_batch, min_idx = torch.min(obj_vals, dim=0)
             if min_obj_batch < incumbent_obj:
                 incumbent_obj = min_obj_batch.item()
-                # 仅在需要时 clone，节约时间
                 incumbent_X = X_int[min_idx].clone() 
+                incumbents.append(incumbent_obj)
+                time_now = time.time() - t0
+                incum_time.append(time_now)
+                
             if (it+1) % 100 == 0:
                 print(f"Iter {it+1}: Best Obj {incumbent_obj:.4f}, Loss {loss.item():.4f}, Term1 {term1.item():.4f}, Term2 {term2.item():.4f}")
                 
     total_time = time.time() - t0
     print(f"Total Time: {total_time:.2f}s, FPS: {num_steps/total_time:.1f}")
-    return incumbent_X, incumbent_obj, total_time
+    return incumbent_X, incumbent_obj, total_time, incumbents, incum_time
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -344,8 +333,8 @@ if __name__ == "__main__":
         batch_size = 1000
         num_steps = 1200
     else:
-        batch_size = 1000
-        num_steps = 1000
+        batch_size = 200
+        num_steps = 1200
     
     lr = 0.02
     dual_init = 1
@@ -354,7 +343,7 @@ if __name__ == "__main__":
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
     start_event.record()
-    X_best, obj_best, solve_time_raw = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, lr, optimizer_type=args.optimizer, x_label_np=x_label_np)
+    X_best, obj_best, solve_time_raw, incumbents, incum_time = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, lr, optimizer_type=args.optimizer, x_label_np=x_label_np)
     end_event.record()
     torch.cuda.synchronize()
     
@@ -375,23 +364,6 @@ if __name__ == "__main__":
     tmp = X_best @ D_np.T @ X_best.T
     obj_best = np.trace(F_np @ tmp)
     
-    # # print the result:
-    # res = []
-    # for i in range(n):
-    #     for j in range(n):
-    #         if X_best[i, j] > 0.5:
-    #             res.append(j+1)
-    #             break
-    # print(res)
-    
-    # final_obj = 0
-    # for i in range(n):
-    #     for j in range(n):
-    #         for k in range(n):
-    #             for l in range(n):
-    #                 final_obj += F_np[i, j] * D_np[k, l] * X_best[i, k] * X_best[j, l]
-    # print(f"Final Obj Check: {final_obj}")
-    
     solve_time = start_event.elapsed_time(end_event) / 1000.0  # seconds
     
     gap = (obj_best - obj_label) / obj_label
@@ -400,3 +372,8 @@ if __name__ == "__main__":
     
     with open(f"result.txt", "a") as f:
         f.write(f"{instance_name} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.4f}\n")
+        
+    # write incumbents over time to file
+    with open(f"/home/xjx/A-xjx/QAPs/results/pdbo/{instance_name}.txt", "w") as f:
+        for t, val in zip(incum_time, incumbents):
+            f.write(f"{t:.4f} {val}\n")
