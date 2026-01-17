@@ -8,8 +8,6 @@ import time
 import os
 import scipy
 from scipy.optimize import linear_sum_assignment
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-
 
 @triton.jit
 def greedy_kernel_optimized(
@@ -71,8 +69,8 @@ def greedy_round_large_batch_torch(M):
     return assignment
 
 @torch.compile
-def sinkhorn_step(log_alpha, num_iters: int = 10):
-    log_S = log_alpha
+def sinkhorn_step(log_alpha, num_iters: int = 10, eps: float = 1):
+    log_S = log_alpha / eps
     for _ in range(num_iters):
         log_S = log_S - torch.logsumexp(log_S, dim=-1, keepdim=True)
         log_S = log_S - torch.logsumexp(log_S, dim=-2, keepdim=True)
@@ -88,7 +86,7 @@ def compute_loss_and_grad(X, Y, F, D_T):
     if n > 500:
         num_iters = 25
     else:
-        num_iters = 50
+        num_iters = 25
     
     S = sinkhorn_step(X, num_iters=num_iters)
     
@@ -102,8 +100,8 @@ def compute_loss_and_grad(X, Y, F, D_T):
     
     # 3. Penalty Term: sum(Y * (S^2 - S))
     # 提前计算 S^2 - S，既用于 Loss 也用于后续 Dual 更新
-    S_sq_minus_S = S * (S - 1.0)
-    # S_sq_minus_S = S * torch.log(S+1e-30)
+    # S_sq_minus_S = S * (S - 1.0)
+    S_sq_minus_S = S * torch.log(S+1e-30)
     # term2 = torch.sum(Y * S_sq_minus_S)
     term2 = torch.sum(Y * S_sq_minus_S, dim=(1, 2)).mean()    
     loss = term1 + term2
@@ -179,22 +177,6 @@ def latin_hypercube_matrices(m, n):
 
 
 def spectral_initialization_qap(F, D, num=None):
-    """
-    Runs spectral initialization for the Quadratic Assignment Problem (QAP).
-    
-    The goal is to find a permutation P that minimizes trace(F @ P @ D^T @ P^T).
-    
-    Parameters:
-    - F (np.ndarray): The Flow matrix (n x n).
-    - D (np.ndarray): The Distance matrix (n x n).
-    - k (int): Number of eigenvectors to use. If None, defaults to n.
-               Using fewer eigenvectors (e.g., k < n) is a common heuristic 
-               for dimension reduction, but k=n captures full spectral info.
-               
-    Returns:
-    - P (np.ndarray): The estimated binary permutation matrix (n x n).
-    - perm (np.ndarray): The array of indices representing the assignment (row i -> col perm[i]).
-    """
     n = F.shape[0]
     if D.shape[0] != n:
         raise ValueError("Matrices F and D must have the same dimension.")
@@ -204,7 +186,9 @@ def spectral_initialization_qap(F, D, num=None):
     if num is None:
         k_list = np.arange(n) 
     else:
-        k_list = np.arange(min(num, n)) + 1
+        # k_list = np.arange(min(num, n)) + 1
+        k_list = np.arange(n-min(num, n), n) + 1
+        print(k_list)
     
     val_F, vec_F = scipy.linalg.eigh(F)
     val_D, vec_D = scipy.linalg.eigh(D)
@@ -232,11 +216,17 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     
     dtype = torch.float32 
     
+    # Warmup (对于 Triton 和 torch.compile 很重要)
+    F = torch.tensor(F_np, device=device, dtype=dtype)
+    D = torch.tensor(D_np, device=device, dtype=dtype)
+    X = torch.rand((2, F_np.shape[0], F_np.shape[0]), device=device, dtype=dtype, requires_grad=True)
+    Y = torch.full((2, F_np.shape[0], F_np.shape[0]), dual_init, device=device, dtype=dtype)
+    _ = compute_loss_and_grad(X[:2], Y[:2], F, D.transpose(-1, -2).contiguous())
+    
     
     t0 = time.time()
     F = torch.tensor(F_np, device=device, dtype=dtype)
     D = torch.tensor(D_np, device=device, dtype=dtype)
-    
     D_T = D.transpose(-1, -2).contiguous() 
     n = F_np.shape[0]
     
@@ -253,6 +243,8 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     X.requires_grad_(True)
     print(X.shape[0])
     
+    # X = torch.tensor(latin_hypercube_matrices(n, batch_size), device=device, dtype=dtype, requires_grad=True)
+    
     
     # X = torch.rand((batch_size, n, n), device=device, dtype=dtype, requires_grad=True)
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
@@ -266,10 +258,6 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     incumbent_obj = float('inf')
     
     print(f"Starting Optimization [N={n}, Batch={batch_size}, Device={device}]")
-    
-    # Warmup (对于 Triton 和 torch.compile 很重要)
-    _ = compute_loss_and_grad(X[:2], Y[:2], F, D_T)
-    
     
     incumbents = []
     incum_time = []
@@ -312,8 +300,9 @@ if __name__ == "__main__":
     parser.add_argument('--instance', type=str, default="nug12")
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--iters', type=int, default=2000)
-    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--optimizer', type=str, default="rmsprop", choices=["rmsprop", "adam"])
+    parser.add_argument('--dual_init', type=float, default=1.0)
     
     args = parser.parse_args()
     
@@ -322,12 +311,19 @@ if __name__ == "__main__":
     
     n, F_np, D_np, obj_label, x_label_np = read_instance(args.instance)
     print(np.sum(np.diag(F_np)), np.sum(np.diag(D_np)))
+    # FD = np.kron(F_np, D_np)
+    # # compute the eigenvalues and eigenvectors
+    # vals, vecs = np.linalg.eigh(FD)
+    # print("Smallest Eigenvalue of Kronecker Product:", vals[0])
+    # print("Largest Eigenvalue of Kronecker Product:", vals[-1])
     
     batch_size = args.batch_size
     num_steps = args.iters
     
-    if n < 300:
-        batch_size = 2000
+    if n < 200:
+        # batch_size = 2000
+        # num_steps = 1000
+        batch_size = 5000
         num_steps = 1000
     elif n < 500:
         batch_size = 1000
@@ -337,7 +333,7 @@ if __name__ == "__main__":
         num_steps = 1200
     
     lr = 0.02
-    dual_init = 1
+    dual_init = args.dual_init
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
@@ -371,9 +367,10 @@ if __name__ == "__main__":
     instance_name = args.instance.split('/')[-1]
     
     with open(f"result.txt", "a") as f:
-        f.write(f"{instance_name} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.4f}\n")
+        # f.write(f"{instance_name} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.4f}\n")
+        f.write(f"{instance_name} {args.dual_init} {solve_time:.2f} {solve_time_raw:.2f} {obj_best}\n")
         
     # write incumbents over time to file
-    with open(f"/home/xjx/A-xjx/QAPs/results/pdbo/{instance_name}.txt", "w") as f:
-        for t, val in zip(incum_time, incumbents):
-            f.write(f"{t:.4f} {val}\n")
+    # with open(f"/home/xjx/A-xjx/QAPs/results/pdbo_square/{instance_name}.txt", "w") as f:
+    #     for t, val in zip(incum_time, incumbents):
+    #         f.write(f"{t:.4f} {val}\n")
