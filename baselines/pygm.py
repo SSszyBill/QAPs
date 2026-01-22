@@ -63,6 +63,7 @@ if __name__ == "__main__":
         solver = pygm.ngm
     elif args.solver == "astar":
         solver = pygm.astar        
+    
         
     if args.instance.startswith("GI"):
         n, F_np, D_np, obj_label, x_label_np = generate_isomorphic(args.instance)
@@ -70,15 +71,20 @@ if __name__ == "__main__":
         n, F_np, D_np, obj_label, x_label_np = read_instance(args.instance)
     
     
-    start_time = time.time()
-    n1 = n2 = torch.tensor([n])
-    # Build affinity matrix
-    conn1, edge1, ne1 = pygm.utils.dense_to_sparse(torch.tensor(F_np, dtype=torch.float64).unsqueeze(0))
-    conn2, edge2, ne2 = pygm.utils.dense_to_sparse(torch.tensor(D_np, dtype=torch.float64).unsqueeze(0))
-    gaussian_aff = functools.partial(pygm.utils.gaussian_aff_fn, sigma=1) # set affinity function
-    K = pygm.utils.build_aff_mat(None, edge1, conn1, None, edge2, conn2, n1, ne1, n2, ne2, edge_aff_fn=gaussian_aff)
-
     try:
+        # normalize F and D
+        F = F_np / np.linalg.norm(F_np, ord='fro')
+        D = D_np / np.linalg.norm(D_np, ord='fro')
+        
+        start_time = time.time()
+        n1 = n2 = torch.tensor([n])
+        # Build affinity matrix
+        conn1, edge1, ne1 = pygm.utils.dense_to_sparse(torch.tensor(F, dtype=torch.float32).unsqueeze(0))
+        conn2, edge2, ne2 = pygm.utils.dense_to_sparse(torch.tensor(D, dtype=torch.float32).unsqueeze(0))
+        gaussian_aff = functools.partial(pygm.utils.gaussian_aff_fn, sigma=1) # set affinity function
+        K = pygm.utils.build_aff_mat(None, edge1, conn1, None, edge2, conn2, n1, ne1, n2, ne2, edge_aff_fn=gaussian_aff)
+
+    
         X = solver(K, n1, n2)
         X = pygm.hungarian(X)[0]
         
@@ -87,7 +93,8 @@ if __name__ == "__main__":
         X_np = X.detach().numpy()
         obj = np.sum(F_np * (X_np @ D_np @ X_np.T))
     except Exception as e:
-        solve_time = -1
+        print(f"Solver {args.solver} failed on instance {args.instance} with error: {e}")
+        solve_time = time.time() - start_time
         obj = -1
     print(obj)
     
