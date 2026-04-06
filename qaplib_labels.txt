@@ -28,7 +28,6 @@ esc16b 292.0
 esc16c 160.0
 esc16d 16.0
 esc16e 28.0
-esc16f 0.0
 esc16g 26.0
 esc16h 996.0
 esc16i 14.0

@@ -87,9 +87,13 @@ def generate_isomorphic(filepath):
     min ||PA-BP||_F^2 = ||A||_F^2 + ||B||_F^2 - 2trace(BPA'P'),
     map to the qap, A = D, B = F
     '''
-    
+    filepath = "./qaplibs/" + filepath
     D = read_dimacs_graph(filepath)
     n = D.shape[0]
+    
+    # check if D is symmetric
+    if not np.allclose(D, D.T):
+        raise ValueError("The input graph must be undirected (symmetric adjacency matrix).")
     
     # generate random permutation matrix
     p_vec = np.random.permutation(n)
@@ -106,18 +110,18 @@ def generate_isomorphic(filepath):
 
 # --- Main Execution ---
 
-# 1. Setup
-instance = '29'
-input_file = f"./GI/paley/paley-{instance}"  # Replace with your actual file
+# # 1. Setup
+# instance = '29'
+# input_file = f"./GI/paley/paley-{instance}"  # Replace with your actual file
 
 
-# base_adj = read_dimacs_graph(input_file)
-n, F_np, D_np, obj_val, x_label = generate_isomorphic(input_file)
+# # base_adj = read_dimacs_graph(input_file)
+# n, F_np, D_np, obj_val, x_label = generate_isomorphic(input_file)
 
     
-tmp = x_label @ D_np.T @ x_label.T
-obj2 = np.trace(F_np @ tmp)
-print("Objective check:", obj2 + obj_val)
+# tmp = x_label @ D_np.T @ x_label.T
+# obj2 = np.trace(F_np @ tmp)
+# print("Objective check:", obj2 - obj_val)
 
 #     # 2. Inspect the output
 #     for item in data:

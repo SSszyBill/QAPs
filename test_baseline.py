@@ -3,12 +3,12 @@ from gurobipy import GRB
 import numpy as np
 import argparse
 
-from main_gpu import read_instance
+from main_gpu3 import read_instance
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--instance', type=str, default="nug12")
-parser.add_argument('--time_limit', type=int, default=300)
+parser.add_argument('--time_limit', type=int, default=100)
 
 
 args = parser.parse_args()
@@ -16,7 +16,7 @@ instance = args.instance
 time_limit = args.time_limit
 
 
-n, F, D, obj_label, x_label = read_instance(instance)
+n, F, D, obj_label, x_label = read_instance(f"QAPLIB/{instance}")
 
 
 model = gp.Model("QAP")

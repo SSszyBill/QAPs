@@ -8,6 +8,7 @@ import time
 import os
 import scipy
 from scipy.optimize import linear_sum_assignment
+import torch.nn.functional as F
 
 @triton.jit
 def greedy_kernel_optimized(
@@ -101,7 +102,10 @@ def compute_loss_and_grad(X, Y, F, D_T):
     # 3. Penalty Term: sum(Y * (S^2 - S))
     # 提前计算 S^2 - S，既用于 Loss 也用于后续 Dual 更新
     # S_sq_minus_S = S * (S - 1.0)
-    S_sq_minus_S = S * torch.log(S+1e-30)
+    # S_sq_minus_S = S * torch.log(S+1e-30)
+    S_sq_minus_S = S * torch.log(S+ 1e-30) + (1 - S) * torch.log(1 - S + 1e-30)
+    # target = torch.empty(3).random_(2)
+    # faster way to compute the S*log(S) + (1-S)*log(1-S)
     # term2 = torch.sum(Y * S_sq_minus_S)
     term2 = torch.sum(Y * S_sq_minus_S, dim=(1, 2)).mean()    
     loss = term1 + term2
@@ -211,7 +215,7 @@ def spectral_initialization_qap(F, D, num=None):
 
     return np.array(P_list)
 
-def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, optimizer_type='adam', x_label_np=None):
+def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr=0.02, dual_lr=0.02, optimizer_type='adam', x_label_np=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     dtype = torch.float32 
@@ -250,9 +254,9 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
     
     if optimizer_type.lower() == 'adam':
-        optimizer = optim.Adam([X], lr=lr)
+        optimizer = optim.Adam([X], lr=primal_lr)
     else:
-        optimizer = optim.RMSprop([X], lr=lr)
+        optimizer = optim.RMSprop([X], lr=primal_lr)
     
     # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.5)
     incumbent_obj = float('inf')
@@ -273,7 +277,7 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, lr=0.01, 
         # 2. Dual Update & Evaluation
         with torch.no_grad():
             # In-place update
-            Y.add_(P_sq_minus_P, alpha=lr)
+            Y.add_(P_sq_minus_P, alpha=dual_lr)
             X_int = run_greedy_triton(P)
             
             val = torch.matmul(F, X_int)
@@ -303,6 +307,8 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--optimizer', type=str, default="rmsprop", choices=["rmsprop", "adam"])
     parser.add_argument('--dual_init', type=float, default=1.0)
+    parser.add_argument('--primal_lr', type=float, default=0.02)
+    parser.add_argument('--dual_lr', type=float, default=0.02)
     
     args = parser.parse_args()
     
@@ -321,10 +327,11 @@ if __name__ == "__main__":
     num_steps = args.iters
     
     if n < 200:
-        # batch_size = 2000
-        # num_steps = 1000
-        batch_size = 5000
-        num_steps = 1000
+        # batch_size = 5000
+        # num_steps = 500
+        # taillard
+        batch_size = 2000
+        num_steps = 1200
     elif n < 500:
         batch_size = 1000
         num_steps = 1200
@@ -332,14 +339,15 @@ if __name__ == "__main__":
         batch_size = 200
         num_steps = 1200
     
-    lr = 0.02
+    primal_lr = args.primal_lr
+    dual_lr = args.dual_lr
     dual_init = args.dual_init
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
     start_event.record()
-    X_best, obj_best, solve_time_raw, incumbents, incum_time = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, lr, optimizer_type=args.optimizer, x_label_np=x_label_np)
+    X_best, obj_best, solve_time_raw, incumbents, incum_time = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, primal_lr, dual_lr, optimizer_type=args.optimizer, x_label_np=x_label_np)
     end_event.record()
     torch.cuda.synchronize()
     
@@ -371,6 +379,6 @@ if __name__ == "__main__":
         f.write(f"{instance_name} {args.dual_init} {solve_time:.2f} {solve_time_raw:.2f} {obj_best}\n")
         
     # write incumbents over time to file
-    # with open(f"/home/xjx/A-xjx/QAPs/results/pdbo_square/{instance_name}.txt", "w") as f:
-    #     for t, val in zip(incum_time, incumbents):
-    #         f.write(f"{t:.4f} {val}\n")
+    with open(f"/home/xjx/A-xjx/QAPs/results/pdbo/{instance_name}.txt", "w") as f:
+        for t, val in zip(incum_time, incumbents):
+            f.write(f"{t:.4f} {val}\n")

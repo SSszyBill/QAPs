@@ -8,6 +8,8 @@ import time
 import os
 import scipy
 from scipy.optimize import linear_sum_assignment
+from main_GI import generate_isomorphic
+
 
 @triton.jit
 def greedy_kernel_optimized(
@@ -87,12 +89,12 @@ def compute_loss_and_grad(X, Y, F, D_T):
     # term1 = torch.sum(M2 * S)
     term1 = torch.sum(M2 * S, dim=(1, 2)).mean()
     
-    # S_sq_minus_S = S * (S - 1.0)
-    S_sq_minus_S = S * torch.log(S + 1e-30)
+    S_sq_minus_S = S * (S - 1.0)
+    # S_sq_minus_S = S * torch.log(S + 1e-30)
     # S_sq_minus_S = S * torch.log(S+ 1e-30) + (1 - S) * torch.log(1 - S + 1e-30)
     # term2 = torch.sum(Y * S_sq_minus_S)
     term2 = torch.sum(Y * S_sq_minus_S, dim=(1, 2)).mean()    
-    loss = term1 + term2
+    loss = -term1 + term2
     
     return loss, S, S_sq_minus_S, term1, term2
 
@@ -171,7 +173,6 @@ def spectral_initialization_qap(F, D, num=None):
     else:
         # k_list = np.arange(min(num, n)) + 1
         k_list = np.arange(n-min(num, n), n) + 1
-        print(k_list)
     
     val_F, vec_F = scipy.linalg.eigh(F)
     val_D, vec_D = scipy.linalg.eigh(D)
@@ -194,7 +195,7 @@ def spectral_initialization_qap(F, D, num=None):
 
     return np.array(P_list)
 
-def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr=0.02, dual_lr=0.02, optimizer_type='adam', x_label_np=None):
+def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr=0.02, dual_lr=0.02, optimizer_type='adam', obj_label=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     dtype = torch.float32 
@@ -223,7 +224,6 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr
         X = torch.cat([X, X_random], dim=0)
     X = X[:batch_size]
     X.requires_grad_(True)
-    print(X.shape[0])
     
     Y = torch.full((batch_size, n, n), dual_init, device=device, dtype=dtype)
     
@@ -255,7 +255,7 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr
             
             val = torch.matmul(F, X_int)
             val = torch.matmul(val, D_T)
-            obj_vals = torch.sum(val * X_int, dim=(1, 2))
+            obj_vals = -torch.sum(val * X_int, dim=(1, 2))
             
             min_obj_batch, min_idx = torch.min(obj_vals, dim=0)
             if min_obj_batch < incumbent_obj:
@@ -264,9 +264,13 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr
                 incumbents.append(incumbent_obj)
                 time_now = time.time() - t0
                 incum_time.append(time_now)
-                
+            
             if (it+1) % 100 == 0:
                 print(f"Iter {it+1}: Best Obj {incumbent_obj:.4f}, Loss {loss.item():.4f}, Term1 {term1.item():.4f}, Term2 {term2.item():.4f}")
+            
+            if obj_label is not None and incumbent_obj == obj_label:
+                print("Optimal solution found, terminating early.")
+                break
                 
     total_time = time.time() - t0
     print(f"Total Time: {total_time:.2f}s, FPS: {num_steps/total_time:.1f}")
@@ -288,7 +292,16 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     
-    n, F_np, D_np, obj_label, x_label_np = read_instance(args.instance)
+    if args.instance.startswith("GI"):
+        n, F_np, D_np, obj_label, x_label_np = generate_isomorphic(args.instance)
+    else:
+        n, F_np, D_np, obj_label, x_label_np = read_instance(args.instance)
+    
+    print(n, obj_label)
+    f_eigs = np.linalg.eigvalsh(F_np)
+    d_eigs = np.linalg.eigvalsh(D_np)
+    print(f"F eigenvalues: min {np.min(f_eigs)}, max {np.max(f_eigs)}, mean {np.mean(f_eigs)}, std {np.std(f_eigs)}")
+    print(f"D eigenvalues: min {np.min(d_eigs)}, max {np.max(d_eigs)}, mean {np.mean(d_eigs)}, std {np.std(d_eigs)}")
     
     batch_size = args.batch_size
     num_steps = args.iters
@@ -298,10 +311,10 @@ if __name__ == "__main__":
         # num_steps = 500
         # taillard
         batch_size = 2000
-        num_steps = 1500
+        num_steps = 10000
     elif n < 500:
         batch_size = 1000
-        num_steps = 1500
+        num_steps = 10000
     else:
         batch_size = 200
         num_steps = 1500
@@ -314,7 +327,7 @@ if __name__ == "__main__":
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
     start_event.record()
-    X_best, obj_best, solve_time_raw, incumbents, incum_time = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, primal_lr, dual_lr, optimizer_type=args.optimizer, x_label_np=x_label_np)
+    X_best, obj_best, solve_time_raw, incumbents, incum_time = run_optimization(F_np, D_np, dual_init, batch_size, num_steps, primal_lr, dual_lr, optimizer_type=args.optimizer, obj_label=obj_label)
     end_event.record()
     torch.cuda.synchronize()
     
@@ -323,12 +336,12 @@ if __name__ == "__main__":
     if row_sums.min() < 0.99 or row_sums.max() > 1.01:
         print("Warning: Solution might not be a valid permutation.")
     else:
-        print(row_sums)
-        print(col_sums)
+        # print(row_sums)
+        # print(col_sums)
         print("Solution is a valid permutation matrix.")
         
     # # check solution
-    n, F_np, D_np, _, _ = read_instance(args.instance)
+    # n, F_np, D_np, _, _ = read_instance(args.instance)
 
     # Compute final objective value
     X_best = X_best.cpu().numpy()
@@ -343,9 +356,9 @@ if __name__ == "__main__":
     
     with open(f"result.txt", "a") as f:
         # f.write(f"{instance_name} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.4f}\n")
-        f.write(f"{instance_name} {args.dual_init} {args.primal_lr} {args.dual_lr} {solve_time:.2f} {solve_time_raw:.2f} {obj_best}\n")
+        f.write(f"{instance_name} {args.dual_init} {args.primal_lr} {args.dual_lr} {solve_time:.2f} {solve_time_raw:.2f} {obj_best + obj_label}\n")
         
     # write incumbents over time to file
-    with open(f"/home/xjx/A-xjx/QAPs/results/pdbo/{instance_name}.txt", "w") as f:
-        for t, val in zip(incum_time, incumbents):
-            f.write(f"{t:.4f} {val}\n")
+    # with open(f"/home/xjx/A-xjx/QAPs/results/pdbo/{instance_name}.txt", "w") as f:
+    #     for t, val in zip(incum_time, incumbents):
+    #         f.write(f"{t:.4f} {val}\n")

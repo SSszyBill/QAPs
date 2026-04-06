@@ -828,8 +828,7 @@ int main(int argc, char** argv)
   
   int gener;
    pop_size = 10;
-   // num_generations = 50000;
-   num_generations = 100;
+   num_generations = 50000;
 
   /****************** dynamic memory allocation ******************/
 

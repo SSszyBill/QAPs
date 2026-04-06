@@ -1,0 +1,3 @@
+# Time(s) ObjectiveValue
+823.59 505600
+1802.03 505600
