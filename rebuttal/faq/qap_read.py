@@ -20,6 +20,7 @@ QAPLIB .sln 格式：
 
 import numpy as np
 from pathlib import Path
+import re
 
 
 def _resolve_problem_dir(root: Path) -> Path:
@@ -69,7 +70,10 @@ def qap_read(problem: str, directory: str):
         return A, B, None, None
 
     with open(sln_path, "r") as f:
-        tokens = f.read().split()
+        # Some .sln files use commas between permutation entries (for example
+        # ste36a.sln in the external qapsoln set), so we tokenize on both
+        # whitespace and commas.
+        tokens = [tok for tok in re.split(r"[\s,]+", f.read()) if tok]
 
     idx = 0
     _n = int(tokens[idx]); idx += 1
