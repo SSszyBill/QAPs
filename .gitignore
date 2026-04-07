@@ -1,5 +1,4 @@
 wandb/
-results/
 # Nsight Systems 性能分析文件（很大，不需要提交）
 *.nsys-rep
 *.sqlite
