@@ -39,10 +39,13 @@ REBUTTAL_DIR = Path(__file__).resolve().parent
 DEFAULT_DATA_DIR = REBUTTAL_DIR / "external" / "qapdata"
 DEFAULT_OUTPUT_DIR = REBUTTAL_DIR / "results" / "qapdata_136"
 METHOD_TO_TOTAL_STARTS = {
-    "FW1": 1,
-    "FW1000": 1000,
-    "FW2000": 2000,
+    # "FW1": 1,
+    "FW100": 100,
+    "FW500": 500, 
+    # "FW1000": 1000,
+    # "FW2000": 2000,
 }
+METHOD_NAMES = list(METHOD_TO_TOTAL_STARTS.keys())
 IMAX = 30
 RNG_SEED = 12345678
 
@@ -67,7 +70,7 @@ def output_path(output_dir: Path, method: str) -> Path:
 
 
 def ensure_output_files(output_dir: Path):
-    for method in ("FW1", "FW1000", "FW2000"):
+    for method in METHOD_NAMES:
         path = output_path(output_dir, method)
         if not path.exists():
             path.write_text("instance, obj, time\n", encoding="utf-8")
@@ -76,7 +79,7 @@ def ensure_output_files(output_dir: Path):
 def load_completed_instances(output_dir: Path) -> set[str]:
     """只有当 instance 同时出现在 3 个结果文件中时，才认为它已完成。"""
     completed_sets = []
-    for method in ("FW1", "FW1000", "FW2000"):
+    for method in METHOD_NAMES:
         path = output_path(output_dir, method)
         instances = set()
         if path.exists():
@@ -110,7 +113,8 @@ def run_multistart(
     f_flat, _ = sfw(A, B, IMAX=IMAX)[:2]
     cumulative_time += time.perf_counter() - t0
     best_f = float(f_flat)
-    results[milestones[1]] = {"obj": best_f, "time": cumulative_time}
+    if 1 in milestones:
+        results[milestones[1]] = {"obj": best_f, "time": cumulative_time}
 
     for start_idx in range(2, max_total_starts + 1):
         t0 = time.perf_counter()
@@ -153,14 +157,14 @@ def main():
         results = run_multistart(A, B, rng)
 
         print(f"[{idx}/{len(problems)}] {problem}")
-        for method in ("FW1", "FW1000", "FW2000"):
+        for method in METHOD_NAMES:
             obj = int(round(results[method]["obj"]))
             elapsed = results[method]["time"]
             append_method_result(args.output_dir, method, problem, obj, elapsed)
             print(f"  {method:>6}  obj={obj:>10}  time={elapsed:>9.3f}s")
 
     print("\nWrote files:")
-    for method in ("FW1", "FW1000", "FW2000"):
+    for method in METHOD_NAMES:
         print(output_path(args.output_dir, method))
     if skipped:
         print(f"Skipped completed instances: {skipped}")
