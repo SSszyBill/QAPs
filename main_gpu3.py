@@ -16,6 +16,8 @@ _greedy_cuda_ext_failed = False
 _use_cuda_greedy = True
 _two_opt_cuda_ext = None
 _two_opt_cuda_ext_failed = False
+_sinkhorn_cuda_ext = None
+_sinkhorn_cuda_ext_failed = False
 
 @triton.jit
 def greedy_kernel_optimized(
@@ -222,6 +224,44 @@ def get_two_opt_cuda_ext():
 #include <vector>
 
 template <typename scalar_t>
+__global__ void compute_perm_cost_kernel(const int* __restrict__ perms,
+                                         const scalar_t* __restrict__ F,
+                                         const scalar_t* __restrict__ D,
+                                         double* __restrict__ costs,
+                                         int BS,
+                                         int N) {
+    extern __shared__ double sdata[];
+    int b = blockIdx.x;
+    if (b >= BS) return;
+
+    int tid = threadIdx.x;
+    const int* p = perms + static_cast<long long>(b) * N;
+    double local = 0.0;
+
+    for (int idx = tid; idx < N * N; idx += blockDim.x) {
+        int i = idx / N;
+        int j = idx - i * N;
+        int pi = p[i];
+        int pj = p[j];
+        local += static_cast<double>(F[i * N + j]) * static_cast<double>(D[pi * N + pj]);
+    }
+
+    sdata[tid] = local;
+    __syncthreads();
+
+    for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+        if (tid < offset) {
+            sdata[tid] += sdata[tid + offset];
+        }
+        __syncthreads();
+    }
+
+    if (tid == 0) {
+        costs[b] = sdata[0];
+    }
+}
+
+template <typename scalar_t>
 __global__ void two_opt_step_kernel(int* __restrict__ perms,
                                     const scalar_t* __restrict__ F,
                                     const scalar_t* __restrict__ D,
@@ -339,13 +379,49 @@ void two_opt_step_cuda(torch::Tensor perms,
     C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
+torch::Tensor compute_perm_cost_cuda(torch::Tensor perms,
+                                     torch::Tensor F,
+                                     torch::Tensor D) {
+    TORCH_CHECK(perms.is_cuda(), "perms must be a CUDA tensor");
+    TORCH_CHECK(F.is_cuda(), "F must be a CUDA tensor");
+    TORCH_CHECK(D.is_cuda(), "D must be a CUDA tensor");
+    TORCH_CHECK(perms.scalar_type() == torch::kInt32, "perms must be int32");
+    TORCH_CHECK(F.scalar_type() == D.scalar_type(), "F and D must have the same dtype");
+    TORCH_CHECK(F.dim() == 2 && D.dim() == 2, "F and D must have shape (n, n)");
+    TORCH_CHECK(perms.dim() == 2, "perms must have shape (batch, n)");
+    TORCH_CHECK(F.is_contiguous() && D.is_contiguous() && perms.is_contiguous(),
+                "perms, F, and D must be contiguous");
+
+    int BS = perms.size(0);
+    int N = perms.size(1);
+    TORCH_CHECK(F.size(0) == N && F.size(1) == N, "F shape must match perms");
+    TORCH_CHECK(D.size(0) == N && D.size(1) == N, "D shape must match perms");
+
+    auto costs = torch::empty({BS}, F.options().dtype(torch::kFloat64));
+    int threads = 256;
+    size_t shared = threads * sizeof(double);
+    auto stream = at::cuda::getCurrentCUDAStream();
+    AT_DISPATCH_FLOATING_TYPES(F.scalar_type(), "compute_perm_cost_cuda", ([&] {
+        compute_perm_cost_kernel<scalar_t><<<BS, threads, shared, stream>>>(
+            perms.data_ptr<int>(),
+            F.data_ptr<scalar_t>(),
+            D.data_ptr<scalar_t>(),
+            costs.data_ptr<double>(),
+            BS,
+            N);
+    }));
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+    return costs;
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("two_opt_step_cuda", &two_opt_step_cuda, "Batched sampled 2-opt QAP step");
+    m.def("compute_perm_cost_cuda", &compute_perm_cost_cuda, "Batched QAP permutation cost");
 }
 '''
     try:
         _two_opt_cuda_ext = load_inline(
-            name="qap_two_opt_ext_v1",
+            name="qap_two_opt_ext_v2",
             cpp_sources="",
             cuda_sources=cuda_src,
             functions=None,
@@ -392,11 +468,527 @@ def run_two_opt_search(perms, F, D, max_iter, num_actions):
         ext.two_opt_step_cuda(perms, F_contig, D_contig, actions.contiguous())
     return perms
 
+def compute_perm_costs(perms, F, D, fallback_dtype=torch.float32):
+    if perms.numel() == 0:
+        return torch.empty((0,), device=perms.device, dtype=torch.float64)
+    if perms.is_cuda and F.is_cuda and D.is_cuda:
+        ext = get_two_opt_cuda_ext()
+        if ext is not None:
+            return ext.compute_perm_cost_cuda(
+                perms.contiguous().to(torch.int32),
+                F.contiguous(),
+                D.contiguous(),
+            )
+
+    dtype = F.dtype if torch.is_floating_point(F) else fallback_dtype
+    F_work = F.to(dtype)
+    D_work = D.to(dtype)
+    p = perms.long()
+    return torch.sum(
+        F_work.unsqueeze(0) * D_work[p.unsqueeze(2), p.unsqueeze(1)],
+        dim=(1, 2),
+    ).to(torch.float64)
+
 def permutations_to_assignment(perms, dtype):
     bs, n = perms.shape
     assignment = torch.zeros((bs, n, n), device=perms.device, dtype=dtype)
     assignment.scatter_(2, perms.long().unsqueeze(-1), 1.0)
     return assignment
+
+def get_sinkhorn_cuda_ext():
+    global _sinkhorn_cuda_ext, _sinkhorn_cuda_ext_failed
+    if _sinkhorn_cuda_ext is not None:
+        return _sinkhorn_cuda_ext
+    if _sinkhorn_cuda_ext_failed:
+        return None
+
+    cuda_src = r'''
+#include <torch/extension.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAException.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <vector>
+
+__global__ void sinkhorn_row_forward_kernel(const float* __restrict__ inp,
+                                            float* __restrict__ out,
+                                            float* __restrict__ probs,
+                                            int total_rows,
+                                            int N) {
+    extern __shared__ float smem[];
+    int row = blockIdx.x;
+    if (row >= total_rows) return;
+    int tid = threadIdx.x;
+    int base = row * N;
+
+    float local_max = -INFINITY;
+    for (int j = tid; j < N; j += blockDim.x) {
+        local_max = fmaxf(local_max, inp[base + j]);
+    }
+    smem[tid] = local_max;
+    __syncthreads();
+
+    for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+        if (tid < offset) smem[tid] = fmaxf(smem[tid], smem[tid + offset]);
+        __syncthreads();
+    }
+    float max_v = smem[0];
+
+    float local_sum = 0.0f;
+    for (int j = tid; j < N; j += blockDim.x) {
+        local_sum += expf(inp[base + j] - max_v);
+    }
+    smem[tid] = local_sum;
+    __syncthreads();
+
+    for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+        if (tid < offset) smem[tid] += smem[tid + offset];
+        __syncthreads();
+    }
+    float logsum = logf(smem[0]) + max_v;
+
+    for (int j = tid; j < N; j += blockDim.x) {
+        float v = inp[base + j] - logsum;
+        out[base + j] = v;
+        probs[base + j] = expf(v);
+    }
+}
+
+__global__ void sinkhorn_col_forward_kernel(const float* __restrict__ inp,
+                                            float* __restrict__ out,
+                                            float* __restrict__ probs,
+                                            int BS,
+                                            int N) {
+    extern __shared__ float smem[];
+    int idx = blockIdx.x;
+    int total_cols = BS * N;
+    if (idx >= total_cols) return;
+    int tid = threadIdx.x;
+    int b = idx / N;
+    int col = idx - b * N;
+    int base = b * N * N;
+
+    float local_max = -INFINITY;
+    for (int i = tid; i < N; i += blockDim.x) {
+        local_max = fmaxf(local_max, inp[base + i * N + col]);
+    }
+    smem[tid] = local_max;
+    __syncthreads();
+
+    for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+        if (tid < offset) smem[tid] = fmaxf(smem[tid], smem[tid + offset]);
+        __syncthreads();
+    }
+    float max_v = smem[0];
+
+    float local_sum = 0.0f;
+    for (int i = tid; i < N; i += blockDim.x) {
+        local_sum += expf(inp[base + i * N + col] - max_v);
+    }
+    smem[tid] = local_sum;
+    __syncthreads();
+
+    for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+        if (tid < offset) smem[tid] += smem[tid + offset];
+        __syncthreads();
+    }
+    float logsum = logf(smem[0]) + max_v;
+
+    for (int i = tid; i < N; i += blockDim.x) {
+        int pos = base + i * N + col;
+        float v = inp[pos] - logsum;
+        out[pos] = v;
+        probs[pos] = expf(v);
+    }
+}
+
+__global__ void sinkhorn_row_backward_kernel(const float* __restrict__ grad_in,
+                                             const float* __restrict__ probs,
+                                             float* __restrict__ grad_out,
+                                             int total_rows,
+                                             int N) {
+    extern __shared__ float smem[];
+    int row = blockIdx.x;
+    if (row >= total_rows) return;
+    int tid = threadIdx.x;
+    int base = row * N;
+
+    float local_sum = 0.0f;
+    for (int j = tid; j < N; j += blockDim.x) {
+        local_sum += grad_in[base + j];
+    }
+    smem[tid] = local_sum;
+    __syncthreads();
+
+    for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+        if (tid < offset) smem[tid] += smem[tid + offset];
+        __syncthreads();
+    }
+    float sum_g = smem[0];
+
+    for (int j = tid; j < N; j += blockDim.x) {
+        int pos = base + j;
+        grad_out[pos] = grad_in[pos] - probs[pos] * sum_g;
+    }
+}
+
+__global__ void sinkhorn_col_backward_kernel(const float* __restrict__ grad_in,
+                                             const float* __restrict__ probs,
+                                             float* __restrict__ grad_out,
+                                             int BS,
+                                             int N) {
+    extern __shared__ float smem[];
+    int idx = blockIdx.x;
+    int total_cols = BS * N;
+    if (idx >= total_cols) return;
+    int tid = threadIdx.x;
+    int b = idx / N;
+    int col = idx - b * N;
+    int base = b * N * N;
+
+    float local_sum = 0.0f;
+    for (int i = tid; i < N; i += blockDim.x) {
+        local_sum += grad_in[base + i * N + col];
+    }
+    smem[tid] = local_sum;
+    __syncthreads();
+
+    for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+        if (tid < offset) smem[tid] += smem[tid + offset];
+        __syncthreads();
+    }
+    float sum_g = smem[0];
+
+    for (int i = tid; i < N; i += blockDim.x) {
+        int pos = base + i * N + col;
+        grad_out[pos] = grad_in[pos] - probs[pos] * sum_g;
+    }
+}
+
+__global__ void sinkhorn_fused_forward_kernel(const float* __restrict__ X,
+                                              float* __restrict__ P,
+                                              float* __restrict__ row_probs,
+                                              float* __restrict__ col_probs,
+                                              int BS,
+                                              int N,
+                                              int num_iters) {
+    extern __shared__ float smem[];
+    float* mat = smem;
+    float* reduce = mat + N * N;
+    int b = blockIdx.x;
+    if (b >= BS) return;
+    int tid = threadIdx.x;
+    int sample_offset = b * N * N;
+
+    for (int idx = tid; idx < N * N; idx += blockDim.x) {
+        mat[idx] = X[sample_offset + idx];
+    }
+    __syncthreads();
+
+    for (int iter = 0; iter < num_iters; ++iter) {
+        for (int r = 0; r < N; ++r) {
+            float local_max = -INFINITY;
+            int row_base = r * N;
+            for (int j = tid; j < N; j += blockDim.x) {
+                local_max = fmaxf(local_max, mat[row_base + j]);
+            }
+            reduce[tid] = local_max;
+            __syncthreads();
+            for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+                if (tid < offset) reduce[tid] = fmaxf(reduce[tid], reduce[tid + offset]);
+                __syncthreads();
+            }
+            float max_v = reduce[0];
+
+            float local_sum = 0.0f;
+            for (int j = tid; j < N; j += blockDim.x) {
+                local_sum += expf(mat[row_base + j] - max_v);
+            }
+            reduce[tid] = local_sum;
+            __syncthreads();
+            for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+                if (tid < offset) reduce[tid] += reduce[tid + offset];
+                __syncthreads();
+            }
+            float logsum = logf(reduce[0]) + max_v;
+            long long prob_base = ((long long)iter * BS + b) * N * N + row_base;
+            for (int j = tid; j < N; j += blockDim.x) {
+                float v = mat[row_base + j] - logsum;
+                mat[row_base + j] = v;
+                row_probs[prob_base + j] = expf(v);
+            }
+            __syncthreads();
+        }
+
+        for (int c = 0; c < N; ++c) {
+            float local_max = -INFINITY;
+            for (int i = tid; i < N; i += blockDim.x) {
+                local_max = fmaxf(local_max, mat[i * N + c]);
+            }
+            reduce[tid] = local_max;
+            __syncthreads();
+            for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+                if (tid < offset) reduce[tid] = fmaxf(reduce[tid], reduce[tid + offset]);
+                __syncthreads();
+            }
+            float max_v = reduce[0];
+
+            float local_sum = 0.0f;
+            for (int i = tid; i < N; i += blockDim.x) {
+                local_sum += expf(mat[i * N + c] - max_v);
+            }
+            reduce[tid] = local_sum;
+            __syncthreads();
+            for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+                if (tid < offset) reduce[tid] += reduce[tid + offset];
+                __syncthreads();
+            }
+            float logsum = logf(reduce[0]) + max_v;
+            long long prob_base = ((long long)iter * BS + b) * N * N;
+            for (int i = tid; i < N; i += blockDim.x) {
+                int pos = i * N + c;
+                float v = mat[pos] - logsum;
+                mat[pos] = v;
+                col_probs[prob_base + pos] = expf(v);
+            }
+            __syncthreads();
+        }
+    }
+
+    for (int idx = tid; idx < N * N; idx += blockDim.x) {
+        P[sample_offset + idx] = expf(mat[idx]);
+    }
+}
+
+__global__ void sinkhorn_fused_backward_kernel(const float* __restrict__ grad_in,
+                                               const float* __restrict__ row_probs,
+                                               const float* __restrict__ col_probs,
+                                               float* __restrict__ grad_out,
+                                               int BS,
+                                               int N,
+                                               int num_iters) {
+    extern __shared__ float smem[];
+    float* grad = smem;
+    float* reduce = grad + N * N;
+    int b = blockIdx.x;
+    if (b >= BS) return;
+    int tid = threadIdx.x;
+    int sample_offset = b * N * N;
+
+    for (int idx = tid; idx < N * N; idx += blockDim.x) {
+        grad[idx] = grad_in[sample_offset + idx];
+    }
+    __syncthreads();
+
+    for (int iter = num_iters - 1; iter >= 0; --iter) {
+        for (int c = 0; c < N; ++c) {
+            float local_sum = 0.0f;
+            for (int i = tid; i < N; i += blockDim.x) {
+                local_sum += grad[i * N + c];
+            }
+            reduce[tid] = local_sum;
+            __syncthreads();
+            for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+                if (tid < offset) reduce[tid] += reduce[tid + offset];
+                __syncthreads();
+            }
+            float sum_g = reduce[0];
+            long long prob_base = ((long long)iter * BS + b) * N * N;
+            for (int i = tid; i < N; i += blockDim.x) {
+                int pos = i * N + c;
+                grad[pos] = grad[pos] - col_probs[prob_base + pos] * sum_g;
+            }
+            __syncthreads();
+        }
+
+        for (int r = 0; r < N; ++r) {
+            float local_sum = 0.0f;
+            int row_base = r * N;
+            for (int j = tid; j < N; j += blockDim.x) {
+                local_sum += grad[row_base + j];
+            }
+            reduce[tid] = local_sum;
+            __syncthreads();
+            for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
+                if (tid < offset) reduce[tid] += reduce[tid + offset];
+                __syncthreads();
+            }
+            float sum_g = reduce[0];
+            long long prob_base = ((long long)iter * BS + b) * N * N + row_base;
+            for (int j = tid; j < N; j += blockDim.x) {
+                grad[row_base + j] = grad[row_base + j] - row_probs[prob_base + j] * sum_g;
+            }
+            __syncthreads();
+        }
+    }
+
+    for (int idx = tid; idx < N * N; idx += blockDim.x) {
+        grad_out[sample_offset + idx] = grad[idx];
+    }
+}
+
+std::vector<torch::Tensor> sinkhorn_forward_cuda(torch::Tensor X, int num_iters) {
+    TORCH_CHECK(X.is_cuda(), "X must be CUDA");
+    TORCH_CHECK(X.scalar_type() == torch::kFloat32, "X must be float32");
+    TORCH_CHECK(X.dim() == 3, "X must have shape (batch, n, n)");
+    TORCH_CHECK(X.is_contiguous(), "X must be contiguous");
+
+    int BS = X.size(0);
+    int N = X.size(1);
+    TORCH_CHECK(X.size(2) == N, "X must be square");
+    int threads = 256;
+    size_t shared = threads * sizeof(float);
+    auto stream = at::cuda::getCurrentCUDAStream();
+
+    auto current = X.contiguous();
+    auto next = torch::empty_like(current);
+    auto row_probs = torch::empty({num_iters, BS, N, N}, X.options());
+    auto col_probs = torch::empty({num_iters, BS, N, N}, X.options());
+
+    int total_rows = BS * N;
+    int total_cols = BS * N;
+    for (int iter = 0; iter < num_iters; ++iter) {
+        auto row_prob_i = row_probs[iter];
+        sinkhorn_row_forward_kernel<<<total_rows, threads, shared, stream>>>(
+            current.data_ptr<float>(), next.data_ptr<float>(), row_prob_i.data_ptr<float>(),
+            total_rows, N);
+        C10_CUDA_KERNEL_LAUNCH_CHECK();
+        auto col_prob_i = col_probs[iter];
+        sinkhorn_col_forward_kernel<<<total_cols, threads, shared, stream>>>(
+            next.data_ptr<float>(), current.data_ptr<float>(), col_prob_i.data_ptr<float>(),
+            BS, N);
+        C10_CUDA_KERNEL_LAUNCH_CHECK();
+    }
+
+    auto P = torch::exp(current);
+    return {P, row_probs, col_probs};
+}
+
+torch::Tensor sinkhorn_backward_cuda(torch::Tensor grad,
+                                     torch::Tensor row_probs,
+                                     torch::Tensor col_probs) {
+    TORCH_CHECK(grad.is_cuda() && row_probs.is_cuda() && col_probs.is_cuda(), "all tensors must be CUDA");
+    TORCH_CHECK(grad.scalar_type() == torch::kFloat32, "grad must be float32");
+    TORCH_CHECK(row_probs.scalar_type() == torch::kFloat32 && col_probs.scalar_type() == torch::kFloat32,
+                "prob tensors must be float32");
+    TORCH_CHECK(grad.dim() == 3 && row_probs.dim() == 4 && col_probs.dim() == 4,
+                "invalid tensor ranks");
+    TORCH_CHECK(grad.is_contiguous() && row_probs.is_contiguous() && col_probs.is_contiguous(),
+                "all tensors must be contiguous");
+
+    int num_iters = row_probs.size(0);
+    int BS = grad.size(0);
+    int N = grad.size(1);
+    TORCH_CHECK(grad.size(2) == N, "grad must be square");
+
+    int threads = 256;
+    size_t shared = threads * sizeof(float);
+    auto stream = at::cuda::getCurrentCUDAStream();
+    auto current = grad.contiguous();
+    auto next = torch::empty_like(current);
+    int total_rows = BS * N;
+    int total_cols = BS * N;
+
+    for (int iter = num_iters - 1; iter >= 0; --iter) {
+        auto col_prob_i = col_probs[iter];
+        sinkhorn_col_backward_kernel<<<total_cols, threads, shared, stream>>>(
+            current.data_ptr<float>(), col_prob_i.data_ptr<float>(), next.data_ptr<float>(),
+            BS, N);
+        C10_CUDA_KERNEL_LAUNCH_CHECK();
+        auto row_prob_i = row_probs[iter];
+        sinkhorn_row_backward_kernel<<<total_rows, threads, shared, stream>>>(
+            next.data_ptr<float>(), row_prob_i.data_ptr<float>(), current.data_ptr<float>(),
+            total_rows, N);
+        C10_CUDA_KERNEL_LAUNCH_CHECK();
+    }
+    return current;
+}
+
+std::vector<torch::Tensor> sinkhorn_forward_fused_cuda(torch::Tensor X, int num_iters) {
+    TORCH_CHECK(X.is_cuda(), "X must be CUDA");
+    TORCH_CHECK(X.scalar_type() == torch::kFloat32, "X must be float32");
+    TORCH_CHECK(X.dim() == 3, "X must have shape (batch, n, n)");
+    TORCH_CHECK(X.is_contiguous(), "X must be contiguous");
+
+    int BS = X.size(0);
+    int N = X.size(1);
+    TORCH_CHECK(X.size(2) == N, "X must be square");
+    TORCH_CHECK(N <= 128, "fused sinkhorn supports N <= 128");
+
+    auto P = torch::empty_like(X);
+    auto row_probs = torch::empty({num_iters, BS, N, N}, X.options());
+    auto col_probs = torch::empty({num_iters, BS, N, N}, X.options());
+
+    int threads = 256;
+    size_t shared = (static_cast<size_t>(N) * N + threads) * sizeof(float);
+    auto stream = at::cuda::getCurrentCUDAStream();
+    sinkhorn_fused_forward_kernel<<<BS, threads, shared, stream>>>(
+        X.data_ptr<float>(),
+        P.data_ptr<float>(),
+        row_probs.data_ptr<float>(),
+        col_probs.data_ptr<float>(),
+        BS,
+        N,
+        num_iters);
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+    return {P, row_probs, col_probs};
+}
+
+torch::Tensor sinkhorn_backward_fused_cuda(torch::Tensor grad,
+                                           torch::Tensor row_probs,
+                                           torch::Tensor col_probs) {
+    TORCH_CHECK(grad.is_cuda() && row_probs.is_cuda() && col_probs.is_cuda(), "all tensors must be CUDA");
+    TORCH_CHECK(grad.scalar_type() == torch::kFloat32, "grad must be float32");
+    TORCH_CHECK(row_probs.scalar_type() == torch::kFloat32 && col_probs.scalar_type() == torch::kFloat32,
+                "prob tensors must be float32");
+    TORCH_CHECK(grad.dim() == 3 && row_probs.dim() == 4 && col_probs.dim() == 4,
+                "invalid tensor ranks");
+    TORCH_CHECK(grad.is_contiguous() && row_probs.is_contiguous() && col_probs.is_contiguous(),
+                "all tensors must be contiguous");
+
+    int num_iters = row_probs.size(0);
+    int BS = grad.size(0);
+    int N = grad.size(1);
+    TORCH_CHECK(grad.size(2) == N, "grad must be square");
+    TORCH_CHECK(N <= 128, "fused sinkhorn supports N <= 128");
+
+    auto grad_out = torch::empty_like(grad);
+    int threads = 256;
+    size_t shared = (static_cast<size_t>(N) * N + threads) * sizeof(float);
+    auto stream = at::cuda::getCurrentCUDAStream();
+    sinkhorn_fused_backward_kernel<<<BS, threads, shared, stream>>>(
+        grad.data_ptr<float>(),
+        row_probs.data_ptr<float>(),
+        col_probs.data_ptr<float>(),
+        grad_out.data_ptr<float>(),
+        BS,
+        N,
+        num_iters);
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+    return grad_out;
+}
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("sinkhorn_forward_cuda", &sinkhorn_forward_cuda, "Sinkhorn forward with saved probabilities");
+    m.def("sinkhorn_backward_cuda", &sinkhorn_backward_cuda, "Sinkhorn backward from saved probabilities");
+    m.def("sinkhorn_forward_fused_cuda", &sinkhorn_forward_fused_cuda, "Fused Sinkhorn forward with saved probabilities");
+    m.def("sinkhorn_backward_fused_cuda", &sinkhorn_backward_fused_cuda, "Fused Sinkhorn backward from saved probabilities");
+}
+'''
+    try:
+        _sinkhorn_cuda_ext = load_inline(
+            name="qap_sinkhorn_ext_v2",
+            cpp_sources="",
+            cuda_sources=cuda_src,
+            functions=None,
+            extra_cuda_cflags=["-O3"],
+            verbose=False,
+        )
+        return _sinkhorn_cuda_ext
+    except Exception as exc:
+        print(f"Warning: CUDA sinkhorn extension unavailable ({exc}). Falling back to manual Torch sinkhorn.")
+        _sinkhorn_cuda_ext_failed = True
+        return None
 
 @torch.compile
 def sinkhorn_step(log_alpha, num_iters: int = 10, eps: float = 1):
@@ -412,7 +1004,7 @@ def compute_loss_and_grad(X, Y, F, D_T):
     将 Loss 计算和梯度相关的操作融合，减少中间变量显存占用。
     """
     # 1. Sinkhorn Forward
-    S = sinkhorn_step(X, num_iters=25)
+    S = sinkhorn_step(X, num_iters=5)
 
     # 2. QAP Objective: Trace(F S D^T S^T)
     # 利用矩阵乘法结合律减少计算量
@@ -439,7 +1031,7 @@ def compute_loss_and_grad(X, Y, F, D_T):
 def rmsprop_train_step_sinkhorn_grad(X, Y, square_avg, F, D_T, primal_lr: float, dual_lr: float):
     X_req = X.detach().requires_grad_(True)
     log_S = X_req
-    for _ in range(25):
+    for _ in range(15):
         log_S = log_S - torch.logsumexp(log_S, dim=-1, keepdim=True)
         log_S = log_S - torch.logsumexp(log_S, dim=-2, keepdim=True)
     P = torch.exp(log_S)
@@ -474,7 +1066,7 @@ def rmsprop_train_step_sinkhorn_grad(X, Y, square_avg, F, D_T, primal_lr: float,
 def rmsprop_train_step_autograd(X, Y, square_avg, F, D_T, primal_lr: float, dual_lr: float):
     X_req = X.detach().requires_grad_(True)
     log_S = X_req
-    for _ in range(25):
+    for _ in range(15):
         log_S = log_S - torch.logsumexp(log_S, dim=-1, keepdim=True)
         log_S = log_S - torch.logsumexp(log_S, dim=-2, keepdim=True)
     P = torch.exp(log_S)
@@ -492,11 +1084,97 @@ def rmsprop_train_step_autograd(X, Y, square_avg, F, D_T, primal_lr: float, dual
     Y = Y + dual_lr * P_entropy
     return X.detach(), Y.detach(), square_avg.detach(), P.detach(), loss.detach(), term1.detach(), term2.detach()
 
+@torch.compile
+def rmsprop_train_step_sinkhorn_manual(X, Y, square_avg, F, D_T, primal_lr: float, dual_lr: float):
+    log_S = X.detach()
+    row_probs = []
+    col_probs = []
+    for _ in range(15):
+        row_prob = torch.softmax(log_S, dim=-1)
+        log_S = log_S - torch.logsumexp(log_S, dim=-1, keepdim=True)
+        col_prob = torch.softmax(log_S, dim=-2)
+        log_S = log_S - torch.logsumexp(log_S, dim=-2, keepdim=True)
+        row_probs.append(row_prob)
+        col_probs.append(col_prob)
+    P = torch.exp(log_S)
+
+    M1 = torch.matmul(F, P)
+    M2 = torch.matmul(M1, D_T)
+    term1 = torch.sum(M2 * P, dim=(1, 2)).mean()
+
+    eps = 1e-30
+    P_entropy = P * torch.log(P + eps) + (1 - P) * torch.log(1 - P + eps)
+    term2 = torch.sum(Y * P_entropy, dim=(1, 2)).mean()
+    loss = term1 + term2
+
+    D = D_T.transpose(-1, -2)
+    qap_grad = M2 + torch.matmul(torch.matmul(F.transpose(-1, -2), P), D)
+    entropy_grad = (
+        torch.log(P + eps)
+        + P / (P + eps)
+        - torch.log(1 - P + eps)
+        - (1 - P) / (1 - P + eps)
+    )
+    grad = (qap_grad + Y * entropy_grad) * P / P.shape[0]
+
+    for i in range(14, -1, -1):
+        col_prob = col_probs[i]
+        grad = grad - col_prob * torch.sum(grad, dim=-2, keepdim=True)
+        row_prob = row_probs[i]
+        grad = grad - row_prob * torch.sum(grad, dim=-1, keepdim=True)
+
+    square_avg = square_avg * 0.99 + grad * grad * 0.01
+    X = X.detach() - primal_lr * grad / (torch.sqrt(square_avg) + 1e-8)
+    Y = Y + dual_lr * P_entropy
+    return X.detach(), Y.detach(), square_avg.detach(), P.detach(), loss.detach(), term1.detach(), term2.detach()
+
+def rmsprop_train_step_sinkhorn_cuda(X, Y, square_avg, F, D_T, primal_lr: float, dual_lr: float):
+    ext = get_sinkhorn_cuda_ext()
+    if ext is None or not X.is_cuda or X.dtype != torch.float32:
+        return rmsprop_train_step_sinkhorn_manual(X, Y, square_avg, F, D_T, primal_lr, dual_lr)
+
+    X_in = X.detach().contiguous()
+    use_fused = X_in.shape[-1] <= 128
+    if use_fused:
+        P, row_probs, col_probs = ext.sinkhorn_forward_fused_cuda(X_in, 15)
+    else:
+        P, row_probs, col_probs = ext.sinkhorn_forward_cuda(X_in, 15)
+
+    M1 = torch.matmul(F, P)
+    M2 = torch.matmul(M1, D_T)
+    term1 = torch.sum(M2 * P, dim=(1, 2)).mean()
+
+    eps = 1e-30
+    P_entropy = P * torch.log(P + eps) + (1 - P) * torch.log(1 - P + eps)
+    term2 = torch.sum(Y * P_entropy, dim=(1, 2)).mean()
+    loss = term1 + term2
+
+    D = D_T.transpose(-1, -2)
+    qap_grad = M2 + torch.matmul(torch.matmul(F.transpose(-1, -2), P), D)
+    entropy_grad = (
+        torch.log(P + eps)
+        + P / (P + eps)
+        - torch.log(1 - P + eps)
+        - (1 - P) / (1 - P + eps)
+    )
+    grad_p = (qap_grad + Y * entropy_grad) * P / P.shape[0]
+    if use_fused:
+        grad = ext.sinkhorn_backward_fused_cuda(
+            grad_p.contiguous(), row_probs.contiguous(), col_probs.contiguous()
+        )
+    else:
+        grad = ext.sinkhorn_backward_cuda(grad_p.contiguous(), row_probs.contiguous(), col_probs.contiguous())
+
+    square_avg = square_avg * 0.99 + grad * grad * 0.01
+    X = X.detach() - primal_lr * grad / (torch.sqrt(square_avg) + 1e-8)
+    Y = Y + dual_lr * P_entropy
+    return X.detach(), Y.detach(), square_avg.detach(), P.detach(), loss.detach(), term1.detach(), term2.detach()
+
 @torch.compile(options={"max_autotune": True, "triton.cudagraphs": False})
 def rmsprop_train_step_sinkhorn_grad_autotune(X, Y, square_avg, F, D_T, primal_lr: float, dual_lr: float):
     X_req = X.detach().requires_grad_(True)
     log_S = X_req
-    for _ in range(25):
+    for _ in range(15):
         log_S = log_S - torch.logsumexp(log_S, dim=-1, keepdim=True)
         log_S = log_S - torch.logsumexp(log_S, dim=-2, keepdim=True)
     P = torch.exp(log_S)
@@ -648,9 +1326,17 @@ def should_compile_train_step(n, mode):
     return False
 
 def train_step_impl(n, compile_tune):
+    if compile_tune == "cuda":
+        return rmsprop_train_step_sinkhorn_cuda
+    if compile_tune == "manual_graph":
+        return rmsprop_train_step_sinkhorn_manual
+    if compile_tune == "manual":
+        return rmsprop_train_step_sinkhorn_manual
     if compile_tune == "autograd":
         return rmsprop_train_step_autograd
-    if compile_tune == "autotune" or (compile_tune == "default" and n <= 64):
+    if compile_tune == "default":
+        return rmsprop_train_step_sinkhorn_manual
+    if compile_tune == "autotune":
         return rmsprop_train_step_sinkhorn_grad_autotune
     return rmsprop_train_step_sinkhorn_grad
 
@@ -660,21 +1346,7 @@ def default_eval_schedule(n):
 def default_compile_step(instance_name, n, mode, target_obj):
     if mode != "auto":
         return mode
-    if target_obj is not None and (
-        instance_name.startswith("bur26")
-        or instance_name.startswith("chr")
-        or instance_name == "els19"
-        or instance_name in {
-            "tai15a",
-            "tai20b",
-            "tai25a",
-            "tai25b",
-            "tai30a",
-            "tai30b",
-        }
-    ):
-        return "on"
-    return "off"
+    return "on"
 
 def default_runtime_options(instance_name, n, eval_interval, eval_dense_until, target_obj):
     if target_obj is not None and instance_name.startswith("bur26"):
@@ -718,7 +1390,7 @@ def should_use_cuda_graph_step(instance_name, optimizer_name, use_compiled_step,
         and torch.cuda.is_available()
     )
 
-def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr=0.02, dual_lr=0.02, optimizer_type='adam', x_label_np=None, compile_step='auto', c_backend='on', compile_tune='default', eval_interval=None, eval_dense_until=None, target_obj=None, instance_name="", two_opt=False, two_opt_iter=None, two_opt_actions=None, two_opt_topk=None, verbose=False):
+def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr=0.02, dual_lr=0.02, optimizer_type='adam', x_label_np=None, compile_step='auto', c_backend='on', compile_tune='default', eval_interval=None, eval_dense_until=None, target_obj=None, instance_name="", two_opt=False, two_opt_iter=None, two_opt_actions=None, two_opt_topk=None, two_opt_interval=1, graph_chunk_steps=1, verbose=False):
     global _use_cuda_greedy
     _use_cuda_greedy = (c_backend == 'on')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -755,6 +1427,10 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr
         n, batch_size, two_opt_iter, two_opt_actions, two_opt_topk
     )
     two_opt_topk = min(two_opt_topk, batch_size)
+    two_opt_interval = max(1, int(two_opt_interval))
+    graph_chunk_steps = int(graph_chunk_steps)
+    if graph_chunk_steps <= 0:
+        graph_chunk_steps = max(1, int(eval_interval) if eval_interval is not None and eval_interval > 0 else 1)
 
     X_spectral = spectral_initialization_qap(F_np, D_np, batch_size, verbose=verbose)
     X = torch.tensor(X_spectral, device=device, dtype=dtype)
@@ -795,6 +1471,12 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr
     )
     graph_step = None
     graph_P = None
+    compiled_graph_step = None
+    compiled_graph_outputs = None
+    use_compiled_graph_step = False
+    graph_loss = None
+    graph_term1 = None
+    graph_term2 = None
     if use_cuda_graph_step:
         # Warm graph memory pools on a side stream. The captured operations are
         # the same autograd loss/backward and RMSProp tensor update used below.
@@ -832,6 +1514,52 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr
                 rms_square_avg.mul_(0.99).addcmul_(grad, grad, value=0.01)
                 X.addcdiv_(grad, rms_square_avg.sqrt().add_(1e-8), value=-primal_lr)
                 Y.add_(P_sq_minus_P, alpha=dual_lr)
+    elif use_compiled_step and compile_tune in {"default", "manual_graph"} and torch.cuda.is_available():
+        # Capture the hand-written Sinkhorn backward RMSProp step. Static tensor
+        # addresses are preserved across replays; the step returns freshly
+        # allocated output tensors inside the graph's private memory pool.
+        for _ in range(3):
+            X, Y, rms_square_avg, P, loss, term1, term2 = compiled_train_step(
+                X, Y, rms_square_avg, F, D_T, primal_lr, dual_lr
+            )
+        torch.cuda.synchronize()
+        compiled_graph_step = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(compiled_graph_step):
+            graph_X_cur = X
+            graph_Y_cur = Y
+            graph_square_avg_cur = rms_square_avg
+            for _ in range(graph_chunk_steps):
+                compiled_graph_outputs = compiled_train_step(
+                    graph_X_cur,
+                    graph_Y_cur,
+                    graph_square_avg_cur,
+                    F,
+                    D_T,
+                    primal_lr,
+                    dual_lr,
+                )
+                (
+                    graph_X_cur,
+                    graph_Y_cur,
+                    graph_square_avg_cur,
+                    graph_P,
+                    graph_loss,
+                    graph_term1,
+                    graph_term2,
+                ) = compiled_graph_outputs
+            (
+                graph_X_next,
+                graph_Y_next,
+                graph_square_avg_next,
+                graph_P,
+                graph_loss,
+                graph_term1,
+                graph_term2,
+            ) = compiled_graph_outputs
+            X.copy_(graph_X_next)
+            Y.copy_(graph_Y_next)
+            rms_square_avg.copy_(graph_square_avg_next)
+        use_compiled_graph_step = True
     
     # scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=200, T_mult=1, eta_min=lr*0.5)
     incumbent_obj = float('inf')
@@ -840,17 +1568,44 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr
         print(f"Starting Optimization [N={n}, Batch={batch_size}, Device={device}]")
         print(f"Evaluation schedule: dense_until={eval_dense_until}, interval={eval_interval}, target_obj={target_obj}")
         if two_opt:
-            print(f"2-opt enabled: iter={two_opt_iter}, actions={two_opt_actions}, topk={two_opt_topk}")
+            print(f"2-opt enabled: iter={two_opt_iter}, actions={two_opt_actions}, topk={two_opt_topk}, interval={two_opt_interval}")
     t0 = time.time()
     
     incumbents = []
     incum_time = []
+    bks_time = None
     X_int_buffer = torch.empty_like(X)
     
-    for it in range(num_steps):
+    it = 0
+    while it < num_steps:
+        step_advance = 1
         if use_cuda_graph_step:
             graph_step.replay()
             P = graph_P
+        elif use_compiled_graph_step:
+            if it < eval_dense_until:
+                max_advance = 1
+            else:
+                next_eval = num_steps - 1
+                if eval_interval is not None and eval_interval > 0:
+                    next_interval_eval = ((it + eval_interval - 1) // eval_interval) * eval_interval
+                    next_eval = min(next_eval, next_interval_eval)
+                max_advance = max(1, next_eval - it + 1)
+
+            if graph_chunk_steps <= max_advance:
+                compiled_graph_step.replay()
+                P = graph_P
+                loss = graph_loss
+                term1 = graph_term1
+                term2 = graph_term2
+                step_advance = graph_chunk_steps
+            else:
+                X_next, Y_next, square_avg_next, P, loss, term1, term2 = compiled_train_step(
+                    X, Y, rms_square_avg, F, D_T, primal_lr, dual_lr
+                )
+                X.copy_(X_next)
+                Y.copy_(Y_next)
+                rms_square_avg.copy_(square_avg_next)
         elif use_compiled_step:
             X, Y, rms_square_avg, P, loss, term1, term2 = compiled_train_step(
                 X, Y, rms_square_avg, F, D_T, primal_lr, dual_lr
@@ -873,66 +1628,78 @@ def run_optimization(F_np, D_np, dual_init, batch_size, num_steps=100, primal_lr
                 Y.add_(P_sq_minus_P, alpha=dual_lr)
         
         # 2. Dual Update & Evaluation
-        if it < eval_dense_until or it % eval_interval == 0 or it == num_steps - 1:
+        eval_it = it + step_advance - 1
+        do_eval = eval_it < eval_dense_until or eval_it % eval_interval == 0 or eval_it == num_steps - 1
+        if do_eval:
             with torch.no_grad():
                 X_int = run_greedy_triton(P, X_int_buffer)
-                val = torch.matmul(F, X_int)
-                val = torch.matmul(val, D_T)
-                obj_vals = torch.sum(val * X_int, dim=(1, 2))
+                perms = torch.argmax(X_int, dim=2).to(torch.int32).contiguous()
+                obj_vals = compute_perm_costs(perms, F, D)
 
-                if two_opt:
-                    ls_count = min(two_opt_topk, X_int.shape[0])
+                eval_id = eval_it if eval_interval <= 0 else eval_it // eval_interval
+                do_two_opt = two_opt and (eval_id % two_opt_interval == 0 or it == num_steps - 1)
+                if do_two_opt:
+                    ls_count = min(two_opt_topk, perms.shape[0])
                     if ls_count > 0:
                         _, ls_indices = torch.topk(obj_vals, k=ls_count, largest=False)
-                        ls_perms = torch.argmax(X_int[ls_indices], dim=2).to(torch.int32).contiguous()
+                        ls_perms = perms[ls_indices].clone().contiguous()
                         ls_perms = run_two_opt_search(
                             ls_perms, F, D, max_iter=two_opt_iter, num_actions=two_opt_actions
                         )
-                        X_ls = permutations_to_assignment(ls_perms, X_int.dtype)
-                        val_ls = torch.matmul(F, X_ls)
-                        val_ls = torch.matmul(val_ls, D_T)
-                        obj_ls = torch.sum(val_ls * X_ls, dim=(1, 2))
+                        obj_ls = compute_perm_costs(ls_perms, F, D)
                         improved = obj_ls < obj_vals[ls_indices]
                         if torch.any(improved):
                             improved_indices = ls_indices[improved]
-                            X_int[improved_indices] = X_ls[improved]
+                            perms[improved_indices] = ls_perms[improved]
                             obj_vals[improved_indices] = obj_ls[improved]
 
                 min_obj_batch, min_idx = torch.min(obj_vals, dim=0)
+                should_stop = False
                 if check_all_exact:
-                    perms = torch.argmax(X_int, dim=2)
+                    perms_long = perms.long()
                     exact_objs = torch.sum(
                         F_int.unsqueeze(0)
-                        * D_int[perms.unsqueeze(1), perms.unsqueeze(2)],
+                        * D_int[perms_long.unsqueeze(2), perms_long.unsqueeze(1)],
                         dim=(1, 2),
                     )
                     exact_hit = torch.nonzero(exact_objs == target_obj_int, as_tuple=False)
                     if exact_hit.numel() > 0:
                         hit_idx = exact_hit[0, 0]
-                        incumbent_obj = obj_vals[hit_idx].item()
-                        incumbent_X = X_int[hit_idx].clone()
+                        if bks_time is None:
+                            bks_time = time.time() - t0
+                        incumbent_obj = exact_objs[hit_idx].item()
+                        incumbent_X = permutations_to_assignment(
+                            perms[hit_idx:hit_idx + 1], X_int.dtype
+                        )[0]
                         incumbents.append(incumbent_obj)
-                        incum_time.append(time.time() - t0)
-                        break
+                        incum_time.append(bks_time)
+                        should_stop = True
                 if min_obj_batch < incumbent_obj:
                     incumbent_obj = min_obj_batch.item()
-                    incumbent_X = X_int[min_idx].clone()
+                    incumbent_X = permutations_to_assignment(
+                        perms[min_idx:min_idx + 1], X_int.dtype
+                    )[0]
                     incumbents.append(incumbent_obj)
                     time_now = time.time() - t0
                     incum_time.append(time_now)
                     if target_obj is not None:
-                        perm = torch.argmax(incumbent_X, dim=1)
+                        perm = perms[min_idx].long()
                         exact_obj = torch.sum(F_int * D_int[perm.unsqueeze(1), perm.unsqueeze(0)])
                         if exact_obj.item() == target_obj_int:
-                            break
+                            if bks_time is None:
+                                bks_time = time_now
+                            should_stop = True
+                if should_stop:
+                    break
                 
-            if verbose and (it+1) % 100 == 0:
-                print(f"Iter {it+1}: Best Obj {incumbent_obj:.4f}, Loss {loss.item():.4f}, Term1 {term1.item():.4f}, Term2 {term2.item():.4f}")
+            if verbose and (eval_it+1) % 100 == 0:
+                print(f"Iter {eval_it+1}: Best Obj {incumbent_obj:.4f}, Loss {loss.item():.4f}, Term1 {term1.item():.4f}, Term2 {term2.item():.4f}")
+        it += step_advance
                 
     total_time = time.time() - t0
     if verbose:
         print(f"Total Time: {total_time:.2f}s, FPS: {num_steps/total_time:.1f}")
-    return incumbent_X, incumbent_obj, total_time, incumbents, incum_time
+    return incumbent_X, incumbent_obj, total_time, incumbents, incum_time, bks_time
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -944,9 +1711,11 @@ if __name__ == "__main__":
     parser.add_argument('--dual_init', type=float, default=1.0)
     parser.add_argument('--primal_lr', type=float, default=0.02)
     parser.add_argument('--dual_lr', type=float, default=0.02)
+    parser.add_argument('--auto_config', type=str, default="on", choices=["on", "off"])
     parser.add_argument('--c_backend', type=str, default="on", choices=["on", "off"])
     parser.add_argument('--compile_step', type=str, default="auto", choices=["auto", "on", "off"])
-    parser.add_argument('--compile_tune', type=str, default="default", choices=["default", "autotune", "autograd"])
+    parser.add_argument('--compile_tune', type=str, default="default", choices=["default", "autotune", "autograd", "manual", "manual_graph", "cuda"])
+    parser.add_argument('--graph_chunk_steps', type=int, default=0)
     parser.add_argument('--eval_interval', type=int, default=None)
     parser.add_argument('--eval_dense_until', type=int, default=None)
     parser.add_argument('--target_stop', type=str, default="on", choices=["on", "off"])
@@ -956,6 +1725,8 @@ if __name__ == "__main__":
     parser.add_argument('--two_opt_iter', type=int, default=None)
     parser.add_argument('--two_opt_actions', type=int, default=None)
     parser.add_argument('--two_opt_topk', type=int, default=None)
+    parser.add_argument('--two_opt_interval', type=int, default=1)
+    parser.add_argument('--record_srpd', type=str, default="off", choices=["on", "off"])
     parser.add_argument('--verbose', action='store_true')
     
     args = parser.parse_args()
@@ -977,34 +1748,32 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     num_steps = args.iters
     
-    if n < 200:
-        # batch_size = 5000
-        # num_steps = 500
-        # taillard
-        batch_size = 500
-        num_steps = 1200
-    elif n < 500:
-        batch_size = 500
-        num_steps = 1200
-    else:
-        batch_size = 200
-        num_steps = 1200
+    if args.auto_config == "on":
+        if n < 200:
+            # batch_size = 5000
+            # num_steps = 500
+            # taillard
+            batch_size = 2000
+            num_steps = 1200
+        elif n < 500:
+            batch_size = 1000
+            num_steps = 1200
+        else:
+            batch_size = 200
+            num_steps = 1200
     
     primal_lr = args.primal_lr
     dual_lr = args.dual_lr
     dual_init = args.dual_init
-    if args.target_stop == "on":
-        target_obj = read_reference_objective(args.instance, args.target_file)
-        if target_obj is None:
-            target_obj = read_reference_objective(args.instance)
-    else:
-        target_obj = None
+    target_obj = read_reference_objective(args.instance, args.target_file)
+    if target_obj is None:
+        target_obj = read_reference_objective(args.instance)
     dtype = torch.float32
     
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
     start_event.record()
-    X_best, obj_best, solve_time_raw, incumbents, incum_time = run_optimization(
+    X_best, obj_best, solve_time_raw, incumbents, incum_time, bks_time = run_optimization(
         F_np,
         D_np,
         dual_init,
@@ -1017,6 +1786,7 @@ if __name__ == "__main__":
         compile_step=args.compile_step,
         c_backend=args.c_backend,
         compile_tune=args.compile_tune,
+        graph_chunk_steps=args.graph_chunk_steps,
         eval_interval=args.eval_interval,
         eval_dense_until=args.eval_dense_until,
         target_obj=target_obj,
@@ -1025,6 +1795,7 @@ if __name__ == "__main__":
         two_opt_iter=args.two_opt_iter,
         two_opt_actions=args.two_opt_actions,
         two_opt_topk=args.two_opt_topk,
+        two_opt_interval=args.two_opt_interval,
         verbose=args.verbose,
     )
     end_event.record()
@@ -1048,10 +1819,20 @@ if __name__ == "__main__":
     obj_best = np.trace(F_np @ tmp)
     
     solve_time = start_event.elapsed_time(end_event) / 1000.0  # seconds
+    incumbent_first_time = incum_time[-1] if len(incum_time) > 0 else solve_time_raw
+    report_time_raw = bks_time if bks_time is not None else incumbent_first_time
+    report_time = report_time_raw
     
     gap = (obj_best - obj_label) / obj_label
     
     instance_name = args.instance.split('/')[-1]
     with open(f"result.txt", "a") as f:
         # f.write(f"{instance_name} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.4f}\n")
-        f.write(f"{instance_name} {solve_time:.2f} {solve_time_raw:.2f} {obj_best}\n")
+        f.write(f"{instance_name} {report_time:.2f} {report_time_raw:.2f} {obj_best}\n")
+
+    if args.record_srpd == "on":
+        srpd_dir = os.path.join("results", "srpd")
+        os.makedirs(srpd_dir, exist_ok=True)
+        with open(os.path.join(srpd_dir, f"{instance_name}.txt"), "w") as f:
+            for t, val in zip(incum_time, incumbents):
+                f.write(f"{t:.4f} {val:g}\n")
