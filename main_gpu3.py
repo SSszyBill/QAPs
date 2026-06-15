@@ -19,6 +19,12 @@ _two_opt_cuda_ext_failed = False
 _sinkhorn_cuda_ext = None
 _sinkhorn_cuda_ext_failed = False
 
+def reset_random_seeds(seed):
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+
 @triton.jit
 def greedy_kernel_optimized(
     M_ptr,          # 输入 (BS, N, N)
@@ -1727,12 +1733,13 @@ if __name__ == "__main__":
     parser.add_argument('--two_opt_topk', type=int, default=None)
     parser.add_argument('--two_opt_interval', type=int, default=1)
     parser.add_argument('--record_srpd', type=str, default="off", choices=["on", "off"])
+    parser.add_argument('--warmstart', type=str, default="on", choices=["on", "off"])
+    parser.add_argument('--warmstart_iters', type=int, default=1)
     parser.add_argument('--verbose', action='store_true')
     
     args = parser.parse_args()
     
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
+    reset_random_seeds(args.seed)
     if args.tf32 == "on":
         torch.set_float32_matmul_precision("high")
     
@@ -1754,13 +1761,13 @@ if __name__ == "__main__":
             # num_steps = 500
             # taillard
             batch_size = 2000
-            num_steps = 1200
+            num_steps = 5000
         elif n < 500:
             batch_size = 1000
-            num_steps = 1200
+            num_steps = 5000
         else:
             batch_size = 200
-            num_steps = 1200
+            num_steps = 5000
     
     primal_lr = args.primal_lr
     dual_lr = args.dual_lr
@@ -1769,18 +1776,8 @@ if __name__ == "__main__":
     if target_obj is None:
         target_obj = read_reference_objective(args.instance)
     dtype = torch.float32
-    
-    start_event = torch.cuda.Event(enable_timing=True)
-    end_event = torch.cuda.Event(enable_timing=True)
-    start_event.record()
-    X_best, obj_best, solve_time_raw, incumbents, incum_time, bks_time = run_optimization(
-        F_np,
-        D_np,
-        dual_init,
-        batch_size,
-        num_steps,
-        primal_lr,
-        dual_lr,
+
+    run_kwargs = dict(
         optimizer_type=args.optimizer,
         x_label_np=x_label_np,
         compile_step=args.compile_step,
@@ -1797,6 +1794,39 @@ if __name__ == "__main__":
         two_opt_topk=args.two_opt_topk,
         two_opt_interval=args.two_opt_interval,
         verbose=args.verbose,
+    )
+
+    if args.warmstart == "on":
+        warmstart_iters = max(1, args.warmstart_iters)
+        if args.verbose:
+            print(f"Warmstart: running {warmstart_iters} iteration(s) before official timing.")
+        reset_random_seeds(args.seed)
+        _ = run_optimization(
+            F_np,
+            D_np,
+            dual_init,
+            batch_size,
+            warmstart_iters,
+            primal_lr,
+            dual_lr,
+            **run_kwargs,
+        )
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        reset_random_seeds(args.seed)
+    
+    start_event = torch.cuda.Event(enable_timing=True)
+    end_event = torch.cuda.Event(enable_timing=True)
+    start_event.record()
+    X_best, obj_best, solve_time_raw, incumbents, incum_time, bks_time = run_optimization(
+        F_np,
+        D_np,
+        dual_init,
+        batch_size,
+        num_steps,
+        primal_lr,
+        dual_lr,
+        **run_kwargs,
     )
     end_event.record()
     torch.cuda.synchronize()
@@ -1828,7 +1858,7 @@ if __name__ == "__main__":
     instance_name = args.instance.split('/')[-1]
     with open(f"result.txt", "a") as f:
         # f.write(f"{instance_name} {solve_time:.2f} {solve_time_raw:.2f} {obj_best} {obj_label} {gap:.4f}\n")
-        f.write(f"{instance_name} {report_time:.2f} {report_time_raw:.2f} {obj_best}\n")
+        f.write(f"{instance_name} {report_time:.6f} {report_time_raw:.6f} {obj_best}\n")
 
     if args.record_srpd == "on":
         srpd_dir = os.path.join("results", "srpd")
