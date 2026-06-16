@@ -1,0 +1,13 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/sko100b.dat
+Extracted Name: sko100b
+Problem Size (N): 100
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/sko100b_bma_improvements.txt
+New best cost: 154054 at time: 9.1828 s
+60  44
+  Best cost 154054  0
+New best cost: 154006 at time: 10.9326 s
+Time limit (10 s) reached at generation 1
+Improvement log saved with final result
+
+OUTPUTING

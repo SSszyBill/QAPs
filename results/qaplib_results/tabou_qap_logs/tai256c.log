@@ -1,0 +1,56 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/tai256c.dat
+Instance Name: tai256c
+New best cost: 51583506.000000 at iteration 1 (time: 0.021018 s)
+New best cost: 50864032.000000 at iteration 2 (time: 0.021586 s)
+New best cost: 50215008.000000 at iteration 3 (time: 0.022136 s)
+New best cost: 49569348.000000 at iteration 4 (time: 0.022693 s)
+New best cost: 49088006.000000 at iteration 5 (time: 0.023258 s)
+New best cost: 48678676.000000 at iteration 6 (time: 0.023813 s)
+New best cost: 48370146.000000 at iteration 7 (time: 0.024365 s)
+New best cost: 48067812.000000 at iteration 8 (time: 0.024916 s)
+New best cost: 47779342.000000 at iteration 9 (time: 0.025455 s)
+New best cost: 47508322.000000 at iteration 10 (time: 0.026007 s)
+New best cost: 47304608.000000 at iteration 11 (time: 0.026549 s)
+New best cost: 47117248.000000 at iteration 12 (time: 0.027084 s)
+New best cost: 46929014.000000 at iteration 13 (time: 0.027640 s)
+New best cost: 46748388.000000 at iteration 14 (time: 0.028176 s)
+New best cost: 46568574.000000 at iteration 15 (time: 0.028714 s)
+New best cost: 46412806.000000 at iteration 16 (time: 0.029248 s)
+New best cost: 46257846.000000 at iteration 17 (time: 0.029785 s)
+New best cost: 46109746.000000 at iteration 18 (time: 0.030312 s)
+New best cost: 45993416.000000 at iteration 19 (time: 0.030839 s)
+New best cost: 45890122.000000 at iteration 20 (time: 0.031373 s)
+New best cost: 45788572.000000 at iteration 21 (time: 0.031918 s)
+New best cost: 45700578.000000 at iteration 22 (time: 0.032445 s)
+New best cost: 45614386.000000 at iteration 23 (time: 0.032977 s)
+New best cost: 45526200.000000 at iteration 24 (time: 0.033515 s)
+New best cost: 45471864.000000 at iteration 25 (time: 0.034049 s)
+New best cost: 45388526.000000 at iteration 26 (time: 0.034580 s)
+New best cost: 45305816.000000 at iteration 27 (time: 0.035108 s)
+New best cost: 45256316.000000 at iteration 28 (time: 0.035642 s)
+New best cost: 45208506.000000 at iteration 29 (time: 0.036174 s)
+New best cost: 45165344.000000 at iteration 30 (time: 0.036710 s)
+New best cost: 45129152.000000 at iteration 31 (time: 0.037242 s)
+New best cost: 45101690.000000 at iteration 32 (time: 0.037776 s)
+New best cost: 45072534.000000 at iteration 33 (time: 0.038312 s)
+New best cost: 45048504.000000 at iteration 34 (time: 0.038842 s)
+New best cost: 45003928.000000 at iteration 35 (time: 0.039377 s)
+New best cost: 44995036.000000 at iteration 36 (time: 0.039910 s)
+New best cost: 44953380.000000 at iteration 37 (time: 0.040435 s)
+New best cost: 44932338.000000 at iteration 38 (time: 0.040962 s)
+New best cost: 44927036.000000 at iteration 39 (time: 0.041497 s)
+New best cost: 44922512.000000 at iteration 40 (time: 0.042033 s)
+New best cost: 44918268.000000 at iteration 41 (time: 0.042563 s)
+New best cost: 44917174.000000 at iteration 42 (time: 0.043089 s)
+Time limit (10.00 s) reached at iteration 18768
+Trial 1/1 Cost: 44917174.000000
+
+--- Final Results ---
+Instance: tai256c
+Global Best Cost: 44917174.000000
+Total Time: 10.000516 seconds
+Improvement log saved to results/baseline/tai256c_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

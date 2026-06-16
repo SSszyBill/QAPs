@@ -1,0 +1,30 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/nug30.dat
+Extracted Name: nug30
+Problem Size (N): 30
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/nug30_bma_improvements.txt
+New best cost: 6124 at time: 0.570798 s
+20  13
+  Best cost 6124  0
+15  20
+  Best cost 6124  0
+20  14
+  Best cost 6124  0
+16  15
+  Best cost 6124  0
+10  18
+  Best cost 6124  0
+22  2
+  Best cost 6124  0
+18  11
+  Best cost 6124  0
+22  12
+  Best cost 6124  0
+20  17
+  Best cost 6124  0
+17  19
+  Best cost 6124  0
+Time limit (10 s) reached at generation 10
+Improvement log saved with final result
+
+OUTPUTING

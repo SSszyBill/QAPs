@@ -1,0 +1,45 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/rou20.dat
+Instance Name: rou20
+New best cost: 878314.000000 at iteration 1 (time: 0.000043 s)
+New best cost: 853208.000000 at iteration 2 (time: 0.000072 s)
+New best cost: 835330.000000 at iteration 3 (time: 0.000092 s)
+New best cost: 819816.000000 at iteration 4 (time: 0.000110 s)
+New best cost: 808744.000000 at iteration 5 (time: 0.000127 s)
+New best cost: 790676.000000 at iteration 6 (time: 0.000153 s)
+New best cost: 782344.000000 at iteration 7 (time: 0.000169 s)
+New best cost: 776956.000000 at iteration 8 (time: 0.000197 s)
+New best cost: 770646.000000 at iteration 9 (time: 0.000216 s)
+New best cost: 765168.000000 at iteration 10 (time: 0.000235 s)
+New best cost: 759526.000000 at iteration 11 (time: 0.000259 s)
+New best cost: 757618.000000 at iteration 13 (time: 0.000285 s)
+New best cost: 755414.000000 at iteration 25 (time: 0.000413 s)
+New best cost: 753796.000000 at iteration 26 (time: 0.000432 s)
+New best cost: 742766.000000 at iteration 27 (time: 0.000447 s)
+New best cost: 741884.000000 at iteration 116 (time: 0.001298 s)
+New best cost: 740650.000000 at iteration 183 (time: 0.001942 s)
+New best cost: 736186.000000 at iteration 240 (time: 0.002528 s)
+New best cost: 734810.000000 at iteration 255 (time: 0.002682 s)
+New best cost: 733736.000000 at iteration 256 (time: 0.002701 s)
+New best cost: 733616.000000 at iteration 259 (time: 0.002736 s)
+New best cost: 731060.000000 at iteration 268 (time: 0.002828 s)
+New best cost: 730760.000000 at iteration 274 (time: 0.002892 s)
+New best cost: 730206.000000 at iteration 1284 (time: 0.011020 s)
+New best cost: 729378.000000 at iteration 1579 (time: 0.013231 s)
+New best cost: 728148.000000 at iteration 2208 (time: 0.015814 s)
+New best cost: 726988.000000 at iteration 2209 (time: 0.015820 s)
+New best cost: 726020.000000 at iteration 5732 (time: 0.025674 s)
+New best cost: 725662.000000 at iteration 5733 (time: 0.025680 s)
+New best cost: 725582.000000 at iteration 52783 (time: 0.156485 s)
+New best cost: 725522.000000 at iteration 100289 (time: 0.287589 s)
+Time limit (10.00 s) reached at iteration 3597682
+Trial 1/1 Cost: 725522.000000
+
+--- Final Results ---
+Instance: rou20
+Global Best Cost: 725522.000000
+Total Time: 10.000006 seconds
+Improvement log saved to results/baseline/rou20_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

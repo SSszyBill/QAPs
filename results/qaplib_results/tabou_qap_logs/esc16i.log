@@ -1,0 +1,19 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/esc16i.dat
+Instance Name: esc16i
+New best cost: 38.000000 at iteration 1 (time: 0.000013 s)
+New best cost: 30.000000 at iteration 2 (time: 0.000024 s)
+New best cost: 24.000000 at iteration 3 (time: 0.000039 s)
+New best cost: 18.000000 at iteration 4 (time: 0.000045 s)
+New best cost: 14.000000 at iteration 9 (time: 0.000062 s)
+Time limit (10.00 s) reached at iteration 5914912
+Trial 1/1 Cost: 14.000000
+
+--- Final Results ---
+Instance: esc16i
+Global Best Cost: 14.000000
+Total Time: 10.000006 seconds
+Improvement log saved to results/baseline/esc16i_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

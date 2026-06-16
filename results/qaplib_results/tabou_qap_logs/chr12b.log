@@ -1,0 +1,28 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr12b.dat
+Instance Name: chr12b
+New best cost: 29848.000000 at iteration 1 (time: 0.000014 s)
+New best cost: 22126.000000 at iteration 2 (time: 0.000029 s)
+New best cost: 16562.000000 at iteration 3 (time: 0.000039 s)
+New best cost: 15498.000000 at iteration 4 (time: 0.000047 s)
+New best cost: 15026.000000 at iteration 5 (time: 0.000056 s)
+New best cost: 14624.000000 at iteration 6 (time: 0.000065 s)
+New best cost: 14304.000000 at iteration 7 (time: 0.000073 s)
+New best cost: 14028.000000 at iteration 8 (time: 0.000081 s)
+New best cost: 10662.000000 at iteration 9 (time: 0.000089 s)
+New best cost: 10570.000000 at iteration 10 (time: 0.000098 s)
+New best cost: 10162.000000 at iteration 11 (time: 0.000106 s)
+New best cost: 10102.000000 at iteration 12 (time: 0.000114 s)
+New best cost: 9942.000000 at iteration 751 (time: 0.002315 s)
+New best cost: 9742.000000 at iteration 752 (time: 0.002349 s)
+Time limit (10.00 s) reached at iteration 9596438
+Trial 1/1 Cost: 9742.000000
+
+--- Final Results ---
+Instance: chr12b
+Global Best Cost: 9742.000000
+Total Time: 10.000005 seconds
+Improvement log saved to results/baseline/chr12b_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

@@ -1,0 +1,39 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr15c.dat
+Instance Name: chr15c
+New best cost: 43872.000000 at iteration 1 (time: 0.000027 s)
+New best cost: 31558.000000 at iteration 2 (time: 0.000047 s)
+New best cost: 25232.000000 at iteration 3 (time: 0.000061 s)
+New best cost: 20454.000000 at iteration 4 (time: 0.000073 s)
+New best cost: 18112.000000 at iteration 5 (time: 0.000085 s)
+New best cost: 16802.000000 at iteration 6 (time: 0.000096 s)
+New best cost: 15688.000000 at iteration 7 (time: 0.000107 s)
+New best cost: 15124.000000 at iteration 8 (time: 0.000118 s)
+New best cost: 13592.000000 at iteration 9 (time: 0.000132 s)
+New best cost: 13534.000000 at iteration 10 (time: 0.000146 s)
+New best cost: 13532.000000 at iteration 51 (time: 0.000385 s)
+New best cost: 13528.000000 at iteration 52 (time: 0.000400 s)
+New best cost: 13414.000000 at iteration 53 (time: 0.000410 s)
+New best cost: 13084.000000 at iteration 69 (time: 0.000507 s)
+New best cost: 12768.000000 at iteration 70 (time: 0.000534 s)
+New best cost: 12524.000000 at iteration 72 (time: 0.000553 s)
+New best cost: 12462.000000 at iteration 86 (time: 0.000637 s)
+New best cost: 12336.000000 at iteration 87 (time: 0.000652 s)
+New best cost: 12240.000000 at iteration 90 (time: 0.000674 s)
+New best cost: 12226.000000 at iteration 820 (time: 0.004366 s)
+New best cost: 12168.000000 at iteration 821 (time: 0.004414 s)
+New best cost: 11922.000000 at iteration 822 (time: 0.004424 s)
+New best cost: 10312.000000 at iteration 1225 (time: 0.006207 s)
+New best cost: 9940.000000 at iteration 1226 (time: 0.006221 s)
+New best cost: 9504.000000 at iteration 20452 (time: 0.048565 s)
+Time limit (10.00 s) reached at iteration 6303353
+Trial 1/1 Cost: 9504.000000
+
+--- Final Results ---
+Instance: chr15c
+Global Best Cost: 9504.000000
+Total Time: 10.000006 seconds
+Improvement log saved to results/baseline/chr15c_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

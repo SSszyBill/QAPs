@@ -1,0 +1,50 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/ste36b.dat
+Extracted Name: ste36b
+Problem Size (N): 36
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/ste36b_bma_improvements.txt
+New best cost: 15852 at time: 0.820334 s
+20  16
+  Best cost 15852  0
+18  17
+  Best cost 15852  0
+16  18
+  Best cost 15852  0
+22  18
+  Best cost 15852  0
+15  26
+  Best cost 15852  0
+18  20
+  Best cost 15852  0
+22  19
+  Best cost 15852  0
+20  18
+  Best cost 15852  0
+21  19
+  Best cost 15852  0
+26  13
+  Best cost 15852  0
+4  2
+  Best cost 15852  0
+8  2
+  Best cost 15852  0
+3  3
+  Best cost 15852  0
+5  6
+  Best cost 15852  0
+25  10
+  Best cost 15852  0
+6  2
+  Best cost 15852  0
+18  18
+  Best cost 15852  0
+18  20
+  Best cost 15852  0
+22  14
+  Best cost 15852  0
+23  16
+  Best cost 15852  0
+Time limit (10 s) reached at generation 20
+Improvement log saved with final result
+
+OUTPUTING

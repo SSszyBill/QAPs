@@ -1,0 +1,61 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/tai30a.dat
+Instance Name: tai30a
+New best cost: 2080766.000000 at iteration 1 (time: 0.000112 s)
+New best cost: 2055020.000000 at iteration 2 (time: 0.000153 s)
+New best cost: 2023926.000000 at iteration 3 (time: 0.000187 s)
+New best cost: 1996018.000000 at iteration 4 (time: 0.000221 s)
+New best cost: 1974588.000000 at iteration 5 (time: 0.000253 s)
+New best cost: 1955152.000000 at iteration 6 (time: 0.000281 s)
+New best cost: 1944874.000000 at iteration 7 (time: 0.000311 s)
+New best cost: 1937262.000000 at iteration 8 (time: 0.000341 s)
+New best cost: 1932688.000000 at iteration 9 (time: 0.000371 s)
+New best cost: 1932196.000000 at iteration 10 (time: 0.000402 s)
+New best cost: 1929240.000000 at iteration 11 (time: 0.000431 s)
+New best cost: 1919490.000000 at iteration 12 (time: 0.000460 s)
+New best cost: 1918878.000000 at iteration 13 (time: 0.000489 s)
+New best cost: 1916650.000000 at iteration 14 (time: 0.000524 s)
+New best cost: 1911268.000000 at iteration 15 (time: 0.000552 s)
+New best cost: 1900632.000000 at iteration 16 (time: 0.000578 s)
+New best cost: 1897360.000000 at iteration 17 (time: 0.000605 s)
+New best cost: 1894168.000000 at iteration 19 (time: 0.000656 s)
+New best cost: 1890052.000000 at iteration 20 (time: 0.000685 s)
+New best cost: 1888512.000000 at iteration 21 (time: 0.000711 s)
+New best cost: 1887392.000000 at iteration 23 (time: 0.000759 s)
+New best cost: 1885478.000000 at iteration 25 (time: 0.000809 s)
+New best cost: 1881212.000000 at iteration 27 (time: 0.000858 s)
+New best cost: 1877138.000000 at iteration 28 (time: 0.000888 s)
+New best cost: 1876496.000000 at iteration 30 (time: 0.000939 s)
+New best cost: 1875268.000000 at iteration 35 (time: 0.001050 s)
+New best cost: 1873756.000000 at iteration 36 (time: 0.001079 s)
+New best cost: 1871628.000000 at iteration 42 (time: 0.001209 s)
+New best cost: 1870148.000000 at iteration 49 (time: 0.001366 s)
+New best cost: 1867458.000000 at iteration 58 (time: 0.001565 s)
+New best cost: 1866080.000000 at iteration 59 (time: 0.001597 s)
+New best cost: 1863530.000000 at iteration 60 (time: 0.001624 s)
+New best cost: 1861690.000000 at iteration 61 (time: 0.001654 s)
+New best cost: 1854980.000000 at iteration 375 (time: 0.007407 s)
+New best cost: 1852488.000000 at iteration 376 (time: 0.007421 s)
+New best cost: 1851746.000000 at iteration 379 (time: 0.007449 s)
+New best cost: 1851006.000000 at iteration 700 (time: 0.010079 s)
+New best cost: 1847264.000000 at iteration 745 (time: 0.010447 s)
+New best cost: 1847240.000000 at iteration 746 (time: 0.010459 s)
+New best cost: 1844708.000000 at iteration 779 (time: 0.010736 s)
+New best cost: 1842618.000000 at iteration 791 (time: 0.010841 s)
+New best cost: 1838486.000000 at iteration 792 (time: 0.010853 s)
+New best cost: 1838400.000000 at iteration 800 (time: 0.010923 s)
+New best cost: 1829226.000000 at iteration 821 (time: 0.011096 s)
+New best cost: 1828776.000000 at iteration 1037 (time: 0.012834 s)
+New best cost: 1827810.000000 at iteration 18741 (time: 0.122120 s)
+New best cost: 1818146.000000 at iteration 42397 (time: 0.264551 s)
+Time limit (10.00 s) reached at iteration 1659193
+Trial 1/1 Cost: 1818146.000000
+
+--- Final Results ---
+Instance: tai30a
+Global Best Cost: 1818146.000000
+Total Time: 10.000009 seconds
+Improvement log saved to results/baseline/tai30a_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

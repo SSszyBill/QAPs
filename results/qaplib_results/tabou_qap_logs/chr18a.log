@@ -1,0 +1,51 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr18a.dat
+Instance Name: chr18a
+New best cost: 58526.000000 at iteration 1 (time: 0.000012 s)
+New best cost: 44760.000000 at iteration 2 (time: 0.000020 s)
+New best cost: 38276.000000 at iteration 3 (time: 0.000025 s)
+New best cost: 31076.000000 at iteration 4 (time: 0.000030 s)
+New best cost: 26300.000000 at iteration 5 (time: 0.000034 s)
+New best cost: 24504.000000 at iteration 6 (time: 0.000039 s)
+New best cost: 22876.000000 at iteration 7 (time: 0.000043 s)
+New best cost: 22728.000000 at iteration 8 (time: 0.000048 s)
+New best cost: 21356.000000 at iteration 9 (time: 0.000052 s)
+New best cost: 20452.000000 at iteration 10 (time: 0.000056 s)
+New best cost: 20362.000000 at iteration 16 (time: 0.000074 s)
+New best cost: 20120.000000 at iteration 17 (time: 0.000078 s)
+New best cost: 19292.000000 at iteration 82 (time: 0.000222 s)
+New best cost: 18334.000000 at iteration 89 (time: 0.000241 s)
+New best cost: 17922.000000 at iteration 90 (time: 0.000245 s)
+New best cost: 17664.000000 at iteration 91 (time: 0.000250 s)
+New best cost: 17660.000000 at iteration 166 (time: 0.000425 s)
+New best cost: 16970.000000 at iteration 167 (time: 0.000430 s)
+New best cost: 16378.000000 at iteration 168 (time: 0.000434 s)
+New best cost: 15858.000000 at iteration 169 (time: 0.000438 s)
+New best cost: 15588.000000 at iteration 170 (time: 0.000442 s)
+New best cost: 15268.000000 at iteration 175 (time: 0.000454 s)
+New best cost: 14900.000000 at iteration 176 (time: 0.000458 s)
+New best cost: 14792.000000 at iteration 177 (time: 0.000462 s)
+New best cost: 14094.000000 at iteration 296 (time: 0.000732 s)
+New best cost: 13546.000000 at iteration 297 (time: 0.000737 s)
+New best cost: 13350.000000 at iteration 791 (time: 0.001823 s)
+New best cost: 12960.000000 at iteration 792 (time: 0.001829 s)
+New best cost: 12756.000000 at iteration 793 (time: 0.001833 s)
+New best cost: 12744.000000 at iteration 968 (time: 0.002200 s)
+New best cost: 12684.000000 at iteration 969 (time: 0.002205 s)
+New best cost: 12006.000000 at iteration 971 (time: 0.002211 s)
+New best cost: 11682.000000 at iteration 972 (time: 0.002214 s)
+New best cost: 11508.000000 at iteration 1137 (time: 0.002570 s)
+New best cost: 11262.000000 at iteration 1138 (time: 0.002574 s)
+New best cost: 11118.000000 at iteration 1139 (time: 0.002578 s)
+New best cost: 11098.000000 at iteration 24302 (time: 0.053879 s)
+Time limit (10.00 s) reached at iteration 4544907
+Trial 1/1 Cost: 11098.000000
+
+--- Final Results ---
+Instance: chr18a
+Global Best Cost: 11098.000000
+Total Time: 10.000006 seconds
+Improvement log saved to results/baseline/chr18a_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

@@ -1,0 +1,51 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/sko49.dat
+Extracted Name: sko49
+Problem Size (N): 49
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/sko49_bma_improvements.txt
+New best cost: 23396 at time: 1.69589 s
+30  24
+  Best cost 23396  0
+32  19
+  Best cost 23396  0
+21  10
+  Best cost 23396  0
+23  8
+  Best cost 23396  0
+31  20
+  Best cost 23396  0
+New best cost: 23386 at time: 3.36518 s
+10  7
+  Best cost 23386  3.04976
+10  6
+  Best cost 23386  3.04976
+6  6
+  Best cost 23386  3.04976
+27  33
+  Best cost 23386  3.04976
+31  27
+  Best cost 23386  3.04976
+28  28
+  Best cost 23386  3.04976
+38  17
+  Best cost 23386  3.04976
+4  2
+  Best cost 23386  3.04976
+22  20
+  Best cost 23386  3.04976
+24  24
+  Best cost 23386  3.04976
+31  18
+  Best cost 23386  3.04976
+25  25
+  Best cost 23386  3.04976
+17  27
+  Best cost 23386  3.04976
+18  29
+  Best cost 23386  3.04976
+23  25
+  Best cost 23386  3.04976
+Time limit (10 s) reached at generation 20
+Improvement log saved with final result
+
+OUTPUTING

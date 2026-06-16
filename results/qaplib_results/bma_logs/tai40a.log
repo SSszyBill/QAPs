@@ -1,0 +1,82 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/tai40a.dat
+Extracted Name: tai40a
+Problem Size (N): 40
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/tai40a_bma_improvements.txt
+New best cost: 3161914 at time: 1.14732 s
+25  21
+  Best cost 3161914  0
+New best cost: 3156434 at time: 1.37569 s
+24  21
+  Best cost 3156434  1.24211
+32  12
+  Best cost 3156434  1.24211
+18  28
+  Best cost 3156434  1.24211
+22  22
+  Best cost 3156434  1.24211
+27  17
+  Best cost 3156434  1.24211
+26  24
+  Best cost 3156434  1.24211
+29  19
+  Best cost 3156434  1.24211
+23  23
+  Best cost 3156434  1.24211
+30  13
+  Best cost 3156434  1.24211
+20  26
+  Best cost 3156434  1.24211
+New best cost: 3152220 at time: 4.8072 s
+25  21
+  Best cost 3152220  1.24211
+25  22
+  Best cost 3152220  1.24211
+29  17
+  Best cost 3152220  1.24211
+9  9
+  Best cost 3152220  1.24211
+24  22
+  Best cost 3152220  1.24211
+5  16
+  Best cost 3152220  1.24211
+10  11
+  Best cost 3152220  1.24211
+New best cost: 3151026 at time: 6.40882 s
+19  27
+  Best cost 3151026  6.28241
+2  4
+  Best cost 3151026  6.28241
+21  4
+  Best cost 3151026  6.28241
+22  24
+  Best cost 3151026  6.28241
+28  15
+  Best cost 3151026  6.28241
+26  18
+  Best cost 3151026  6.28241
+New best cost: 3144810 at time: 7.7797 s
+30  14
+  Best cost 3144810  7.76706
+26  16
+  Best cost 3144810  7.76706
+23  26
+  Best cost 3144810  7.76706
+31  14
+  Best cost 3144810  7.76706
+27  18
+  Best cost 3144810  7.76706
+22  24
+  Best cost 3144810  7.76706
+29  17
+  Best cost 3144810  7.76706
+24  25
+  Best cost 3144810  7.76706
+10  13
+  Best cost 3144810  7.76706
+31  13
+  Best cost 3144810  7.76706
+Time limit (10 s) reached at generation 34
+Improvement log saved with final result
+
+OUTPUTING

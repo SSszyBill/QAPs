@@ -1,0 +1,39 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/tai20a.dat
+Instance Name: tai20a
+New best cost: 861906.000000 at iteration 1 (time: 0.000043 s)
+New best cost: 825664.000000 at iteration 2 (time: 0.000068 s)
+New best cost: 808138.000000 at iteration 3 (time: 0.000091 s)
+New best cost: 788892.000000 at iteration 4 (time: 0.000110 s)
+New best cost: 776326.000000 at iteration 5 (time: 0.000126 s)
+New best cost: 767410.000000 at iteration 6 (time: 0.000146 s)
+New best cost: 763048.000000 at iteration 7 (time: 0.000162 s)
+New best cost: 758966.000000 at iteration 8 (time: 0.000181 s)
+New best cost: 754702.000000 at iteration 9 (time: 0.000196 s)
+New best cost: 751308.000000 at iteration 10 (time: 0.000215 s)
+New best cost: 743902.000000 at iteration 12 (time: 0.000242 s)
+New best cost: 731210.000000 at iteration 13 (time: 0.000260 s)
+New best cost: 730650.000000 at iteration 19 (time: 0.000323 s)
+New best cost: 729822.000000 at iteration 20 (time: 0.000342 s)
+New best cost: 728054.000000 at iteration 29 (time: 0.000433 s)
+New best cost: 727130.000000 at iteration 31 (time: 0.000458 s)
+New best cost: 726792.000000 at iteration 39 (time: 0.000543 s)
+New best cost: 725534.000000 at iteration 55 (time: 0.000700 s)
+New best cost: 725004.000000 at iteration 56 (time: 0.000717 s)
+New best cost: 720568.000000 at iteration 57 (time: 0.000732 s)
+New best cost: 718090.000000 at iteration 58 (time: 0.000747 s)
+New best cost: 717058.000000 at iteration 59 (time: 0.000769 s)
+New best cost: 709458.000000 at iteration 63 (time: 0.000811 s)
+New best cost: 705622.000000 at iteration 4427 (time: 0.020702 s)
+New best cost: 703482.000000 at iteration 72515 (time: 0.208770 s)
+Time limit (10.00 s) reached at iteration 3646972
+Trial 1/1 Cost: 703482.000000
+
+--- Final Results ---
+Instance: tai20a
+Global Best Cost: 703482.000000
+Total Time: 10.000007 seconds
+Improvement log saved to results/baseline/tai20a_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

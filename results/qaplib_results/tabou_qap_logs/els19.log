@@ -1,0 +1,55 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/els19.dat
+Instance Name: els19
+New best cost: 37146998.000000 at iteration 1 (time: 0.000036 s)
+New best cost: 30660852.000000 at iteration 2 (time: 0.000066 s)
+New best cost: 26926518.000000 at iteration 3 (time: 0.000084 s)
+New best cost: 24688126.000000 at iteration 4 (time: 0.000098 s)
+New best cost: 23216588.000000 at iteration 5 (time: 0.000113 s)
+New best cost: 21824588.000000 at iteration 6 (time: 0.000128 s)
+New best cost: 20679022.000000 at iteration 7 (time: 0.000140 s)
+New best cost: 20334100.000000 at iteration 8 (time: 0.000155 s)
+New best cost: 20144230.000000 at iteration 9 (time: 0.000168 s)
+New best cost: 19961844.000000 at iteration 10 (time: 0.000182 s)
+New best cost: 19873392.000000 at iteration 11 (time: 0.000195 s)
+New best cost: 19818312.000000 at iteration 12 (time: 0.000209 s)
+New best cost: 19791018.000000 at iteration 13 (time: 0.000222 s)
+New best cost: 19758054.000000 at iteration 14 (time: 0.000235 s)
+New best cost: 19737778.000000 at iteration 15 (time: 0.000247 s)
+New best cost: 19720176.000000 at iteration 16 (time: 0.000260 s)
+New best cost: 19703648.000000 at iteration 17 (time: 0.000273 s)
+New best cost: 19699638.000000 at iteration 18 (time: 0.000287 s)
+New best cost: 19698842.000000 at iteration 19 (time: 0.000310 s)
+New best cost: 19695920.000000 at iteration 92 (time: 0.000774 s)
+New best cost: 19692188.000000 at iteration 93 (time: 0.000787 s)
+New best cost: 19686668.000000 at iteration 101 (time: 0.000844 s)
+New best cost: 19682452.000000 at iteration 127 (time: 0.001009 s)
+New best cost: 19641862.000000 at iteration 128 (time: 0.001023 s)
+New best cost: 19641670.000000 at iteration 129 (time: 0.001034 s)
+New best cost: 19640538.000000 at iteration 142 (time: 0.001118 s)
+New best cost: 19640346.000000 at iteration 143 (time: 0.001130 s)
+New best cost: 19618506.000000 at iteration 714 (time: 0.004553 s)
+New best cost: 19612684.000000 at iteration 715 (time: 0.004568 s)
+New best cost: 19231420.000000 at iteration 1463 (time: 0.008863 s)
+New best cost: 17972660.000000 at iteration 1464 (time: 0.008878 s)
+New best cost: 17775676.000000 at iteration 1465 (time: 0.008889 s)
+New best cost: 17591274.000000 at iteration 1466 (time: 0.008902 s)
+New best cost: 17460242.000000 at iteration 1467 (time: 0.008914 s)
+New best cost: 17328538.000000 at iteration 1468 (time: 0.008925 s)
+New best cost: 17271358.000000 at iteration 1469 (time: 0.008937 s)
+New best cost: 17251728.000000 at iteration 1470 (time: 0.008948 s)
+New best cost: 17241460.000000 at iteration 1471 (time: 0.008960 s)
+New best cost: 17218970.000000 at iteration 1472 (time: 0.008971 s)
+New best cost: 17213148.000000 at iteration 1473 (time: 0.008982 s)
+New best cost: 17212548.000000 at iteration 1474 (time: 0.008993 s)
+Time limit (10.00 s) reached at iteration 4176757
+Trial 1/1 Cost: 17212548.000000
+
+--- Final Results ---
+Instance: els19
+Global Best Cost: 17212548.000000
+Total Time: 10.000008 seconds
+Improvement log saved to results/baseline/els19_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

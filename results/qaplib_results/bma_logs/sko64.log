@@ -1,0 +1,30 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/sko64.dat
+Extracted Name: sko64
+Problem Size (N): 64
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/sko64_bma_improvements.txt
+New best cost: 48498 at time: 2.98232 s
+41  36
+  Best cost 48498  0
+43  32
+  Best cost 48498  0
+42  25
+  Best cost 48498  0
+28  12
+  Best cost 48498  0
+39  28
+  Best cost 48498  0
+47  26
+  Best cost 48498  0
+44  26
+  Best cost 48498  0
+38  32
+  Best cost 48498  0
+12  15
+  Best cost 48498  0
+34  32
+  Best cost 48498  0
+Time limit (10 s) reached at generation 10
+Improvement log saved with final result
+
+OUTPUTING

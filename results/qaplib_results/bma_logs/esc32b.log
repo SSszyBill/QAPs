@@ -1,0 +1,70 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/esc32b.dat
+Extracted Name: esc32b
+Problem Size (N): 32
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/esc32b_bma_improvements.txt
+New best cost: 168 at time: 1.04919 s
+25  8
+  Best cost 168  0
+24  13
+  Best cost 168  0
+14  18
+  Best cost 168  0
+19  12
+  Best cost 168  0
+24  9
+  Best cost 168  0
+20  17
+  Best cost 168  0
+24  12
+  Best cost 168  0
+18  20
+  Best cost 168  0
+21  15
+  Best cost 168  0
+21  16
+  Best cost 168  0
+23  13
+  Best cost 168  0
+19  14
+  Best cost 168  0
+19  18
+  Best cost 168  0
+11  24
+  Best cost 168  0
+18  17
+  Best cost 168  0
+21  11
+  Best cost 168  0
+22  15
+  Best cost 168  0
+21  13
+  Best cost 168  0
+20  14
+  Best cost 168  0
+23  13
+  Best cost 168  0
+21  19
+  Best cost 168  0
+20  18
+  Best cost 168  0
+18  22
+  Best cost 168  0
+23  13
+  Best cost 168  0
+19  16
+  Best cost 168  0
+17  20
+  Best cost 168  0
+18  15
+  Best cost 168  0
+13  15
+  Best cost 168  0
+18  14
+  Best cost 168  0
+18  17
+  Best cost 168  0
+Time limit (10 s) reached at generation 30
+Improvement log saved with final result
+
+OUTPUTING

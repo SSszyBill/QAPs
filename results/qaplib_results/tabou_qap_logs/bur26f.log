@@ -1,0 +1,68 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/bur26f.dat
+Instance Name: bur26f
+New best cost: 4020411.000000 at iteration 1 (time: 0.000071 s)
+New best cost: 3957821.000000 at iteration 2 (time: 0.000103 s)
+New best cost: 3915198.000000 at iteration 3 (time: 0.000126 s)
+New best cost: 3894913.000000 at iteration 4 (time: 0.000147 s)
+New best cost: 3877706.000000 at iteration 5 (time: 0.000168 s)
+New best cost: 3870456.000000 at iteration 6 (time: 0.000188 s)
+New best cost: 3864066.000000 at iteration 7 (time: 0.000208 s)
+New best cost: 3858996.000000 at iteration 8 (time: 0.000229 s)
+New best cost: 3854644.000000 at iteration 9 (time: 0.000249 s)
+New best cost: 3851673.000000 at iteration 10 (time: 0.000268 s)
+New best cost: 3849073.000000 at iteration 11 (time: 0.000288 s)
+New best cost: 3847343.000000 at iteration 12 (time: 0.000307 s)
+New best cost: 3846678.000000 at iteration 13 (time: 0.000327 s)
+New best cost: 3846222.000000 at iteration 14 (time: 0.000347 s)
+New best cost: 3845630.000000 at iteration 15 (time: 0.000366 s)
+New best cost: 3845336.000000 at iteration 16 (time: 0.000398 s)
+New best cost: 3845154.000000 at iteration 17 (time: 0.000417 s)
+New best cost: 3845133.000000 at iteration 18 (time: 0.000436 s)
+New best cost: 3845119.000000 at iteration 19 (time: 0.000455 s)
+New best cost: 3845080.000000 at iteration 50 (time: 0.000829 s)
+New best cost: 3839586.000000 at iteration 2734 (time: 0.017384 s)
+New best cost: 3821823.000000 at iteration 2735 (time: 0.017394 s)
+New best cost: 3807687.000000 at iteration 2736 (time: 0.017401 s)
+New best cost: 3801890.000000 at iteration 2737 (time: 0.017408 s)
+New best cost: 3797415.000000 at iteration 2738 (time: 0.017414 s)
+New best cost: 3793985.000000 at iteration 2739 (time: 0.017421 s)
+New best cost: 3793485.000000 at iteration 2740 (time: 0.017428 s)
+New best cost: 3792155.000000 at iteration 2741 (time: 0.017436 s)
+New best cost: 3791790.000000 at iteration 2742 (time: 0.017442 s)
+New best cost: 3791576.000000 at iteration 2743 (time: 0.017449 s)
+New best cost: 3791443.000000 at iteration 2744 (time: 0.017456 s)
+New best cost: 3789585.000000 at iteration 2793 (time: 0.017690 s)
+New best cost: 3788246.000000 at iteration 2794 (time: 0.017697 s)
+New best cost: 3786912.000000 at iteration 2795 (time: 0.017704 s)
+New best cost: 3785646.000000 at iteration 2796 (time: 0.017711 s)
+New best cost: 3784493.000000 at iteration 2797 (time: 0.017718 s)
+New best cost: 3783828.000000 at iteration 2798 (time: 0.017725 s)
+New best cost: 3783653.000000 at iteration 2799 (time: 0.017732 s)
+New best cost: 3783562.000000 at iteration 2800 (time: 0.017739 s)
+New best cost: 3783437.000000 at iteration 3013 (time: 0.018750 s)
+New best cost: 3783113.000000 at iteration 3014 (time: 0.018757 s)
+New best cost: 3782760.000000 at iteration 3015 (time: 0.018765 s)
+New best cost: 3782732.000000 at iteration 3016 (time: 0.018772 s)
+New best cost: 3782725.000000 at iteration 3017 (time: 0.018780 s)
+New best cost: 3782718.000000 at iteration 10074 (time: 0.049403 s)
+New best cost: 3782433.000000 at iteration 10111 (time: 0.049583 s)
+New best cost: 3782259.000000 at iteration 10112 (time: 0.049591 s)
+New best cost: 3782245.000000 at iteration 10113 (time: 0.049598 s)
+New best cost: 3782239.000000 at iteration 40335 (time: 0.181411 s)
+New best cost: 3782232.000000 at iteration 40336 (time: 0.181424 s)
+New best cost: 3782089.000000 at iteration 43955 (time: 0.197246 s)
+New best cost: 3782068.000000 at iteration 43956 (time: 0.197254 s)
+New best cost: 3782058.000000 at iteration 54368 (time: 0.242892 s)
+New best cost: 3782044.000000 at iteration 54369 (time: 0.242900 s)
+Time limit (10.00 s) reached at iteration 2264189
+Trial 1/1 Cost: 3782044.000000
+
+--- Final Results ---
+Instance: bur26f
+Global Best Cost: 3782044.000000
+Total Time: 10.000007 seconds
+Improvement log saved to results/baseline/bur26f_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

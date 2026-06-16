@@ -1,0 +1,70 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/tai20b.dat
+Instance Name: tai20b
+New best cost: 181766277.000000 at iteration 1 (time: 0.000043 s)
+New best cost: 176232305.000000 at iteration 2 (time: 0.000072 s)
+New best cost: 150378471.000000 at iteration 3 (time: 0.000095 s)
+New best cost: 146010842.000000 at iteration 4 (time: 0.000117 s)
+New best cost: 143313017.000000 at iteration 5 (time: 0.000137 s)
+New best cost: 141958323.000000 at iteration 6 (time: 0.000158 s)
+New best cost: 140932222.000000 at iteration 7 (time: 0.000178 s)
+New best cost: 140204470.000000 at iteration 8 (time: 0.000197 s)
+New best cost: 139477794.000000 at iteration 9 (time: 0.000216 s)
+New best cost: 138539275.000000 at iteration 10 (time: 0.000236 s)
+New best cost: 137902256.000000 at iteration 11 (time: 0.000255 s)
+New best cost: 137267015.000000 at iteration 12 (time: 0.000274 s)
+New best cost: 136826368.000000 at iteration 13 (time: 0.000293 s)
+New best cost: 136290992.000000 at iteration 14 (time: 0.000323 s)
+New best cost: 135987307.000000 at iteration 15 (time: 0.000341 s)
+New best cost: 135719284.000000 at iteration 16 (time: 0.000360 s)
+New best cost: 135587194.000000 at iteration 17 (time: 0.000380 s)
+New best cost: 135378816.000000 at iteration 18 (time: 0.000400 s)
+New best cost: 135256868.000000 at iteration 19 (time: 0.000419 s)
+New best cost: 135126783.000000 at iteration 73 (time: 0.000927 s)
+New best cost: 135105407.000000 at iteration 74 (time: 0.000945 s)
+New best cost: 135071245.000000 at iteration 77 (time: 0.000980 s)
+New best cost: 134789445.000000 at iteration 298 (time: 0.003016 s)
+New best cost: 134769079.000000 at iteration 299 (time: 0.003038 s)
+New best cost: 134759336.000000 at iteration 300 (time: 0.003053 s)
+New best cost: 134684123.000000 at iteration 301 (time: 0.003070 s)
+New best cost: 132846156.000000 at iteration 1737 (time: 0.010280 s)
+New best cost: 130711610.000000 at iteration 1738 (time: 0.010295 s)
+New best cost: 128901628.000000 at iteration 1739 (time: 0.010301 s)
+New best cost: 127572440.000000 at iteration 1740 (time: 0.010312 s)
+New best cost: 125579897.000000 at iteration 1741 (time: 0.010318 s)
+New best cost: 125324852.000000 at iteration 1742 (time: 0.010324 s)
+New best cost: 125139289.000000 at iteration 1743 (time: 0.010329 s)
+New best cost: 125047398.000000 at iteration 1744 (time: 0.010335 s)
+New best cost: 125046422.000000 at iteration 1745 (time: 0.010340 s)
+New best cost: 124976495.000000 at iteration 1746 (time: 0.010345 s)
+New best cost: 124917004.000000 at iteration 1747 (time: 0.010350 s)
+New best cost: 124636562.000000 at iteration 1748 (time: 0.010355 s)
+New best cost: 124560277.000000 at iteration 1848 (time: 0.010652 s)
+New best cost: 124425157.000000 at iteration 1849 (time: 0.010658 s)
+New best cost: 124390746.000000 at iteration 1850 (time: 0.010662 s)
+New best cost: 124347382.000000 at iteration 1894 (time: 0.010793 s)
+New best cost: 123990477.000000 at iteration 1930 (time: 0.010897 s)
+New best cost: 123980058.000000 at iteration 3827 (time: 0.020629 s)
+New best cost: 123771272.000000 at iteration 3828 (time: 0.020641 s)
+New best cost: 123582393.000000 at iteration 3829 (time: 0.020651 s)
+New best cost: 123510113.000000 at iteration 8168 (time: 0.033755 s)
+New best cost: 123316873.000000 at iteration 8169 (time: 0.033761 s)
+New best cost: 123314421.000000 at iteration 8170 (time: 0.033766 s)
+New best cost: 123153227.000000 at iteration 8250 (time: 0.033980 s)
+New best cost: 123009513.000000 at iteration 8251 (time: 0.033985 s)
+New best cost: 122961871.000000 at iteration 9927 (time: 0.038329 s)
+New best cost: 122957756.000000 at iteration 9928 (time: 0.038335 s)
+New best cost: 122887383.000000 at iteration 9929 (time: 0.038340 s)
+New best cost: 122854054.000000 at iteration 9930 (time: 0.038344 s)
+New best cost: 122455319.000000 at iteration 9931 (time: 0.038348 s)
+Time limit (10.00 s) reached at iteration 3822994
+Trial 1/1 Cost: 122455319.000000
+
+--- Final Results ---
+Instance: tai20b
+Global Best Cost: 122455319.000000
+Total Time: 10.000007 seconds
+Improvement log saved to results/baseline/tai20b_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

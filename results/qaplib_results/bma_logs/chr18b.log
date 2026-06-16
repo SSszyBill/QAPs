@@ -1,0 +1,410 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr18b.dat
+Extracted Name: chr18b
+Problem Size (N): 18
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/chr18b_bma_improvements.txt
+New best cost: 1534 at time: 0.165577 s
+9  11
+  Best cost 1534  0
+8  11
+  Best cost 1534  0
+15  0
+  Best cost 1534  0
+10  9
+  Best cost 1534  0
+11  10
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+9  9
+  Best cost 1534  0
+11  9
+  Best cost 1534  0
+13  7
+  Best cost 1534  0
+8  13
+  Best cost 1534  0
+6  14
+  Best cost 1534  0
+11  10
+  Best cost 1534  0
+11  9
+  Best cost 1534  0
+9  10
+  Best cost 1534  0
+11  10
+  Best cost 1534  0
+10  11
+  Best cost 1534  0
+13  4
+  Best cost 1534  0
+12  8
+  Best cost 1534  0
+12  10
+  Best cost 1534  0
+14  6
+  Best cost 1534  0
+10  9
+  Best cost 1534  0
+15  4
+  Best cost 1534  0
+6  10
+  Best cost 1534  0
+9  13
+  Best cost 1534  0
+0  5
+  Best cost 1534  0
+9  13
+  Best cost 1534  0
+9  12
+  Best cost 1534  0
+14  7
+  Best cost 1534  0
+7  16
+  Best cost 1534  0
+13  6
+  Best cost 1534  0
+15  6
+  Best cost 1534  0
+14  6
+  Best cost 1534  0
+12  7
+  Best cost 1534  0
+13  4
+  Best cost 1534  0
+14  8
+  Best cost 1534  0
+8  12
+  Best cost 1534  0
+13  6
+  Best cost 1534  0
+10  9
+  Best cost 1534  0
+12  6
+  Best cost 1534  0
+10  9
+  Best cost 1534  0
+8  9
+  Best cost 1534  0
+7  10
+  Best cost 1534  0
+9  12
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+12  5
+  Best cost 1534  0
+12  4
+  Best cost 1534  0
+10  11
+  Best cost 1534  0
+9  13
+  Best cost 1534  0
+10  7
+  Best cost 1534  0
+9  12
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+7  7
+  Best cost 1534  0
+12  8
+  Best cost 1534  0
+12  5
+  Best cost 1534  0
+13  7
+  Best cost 1534  0
+9  7
+  Best cost 1534  0
+10  11
+  Best cost 1534  0
+17  2
+  Best cost 1534  0
+8  11
+  Best cost 1534  0
+11  4
+  Best cost 1534  0
+13  9
+  Best cost 1534  0
+7  13
+  Best cost 1534  0
+5  13
+  Best cost 1534  0
+11  7
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+12  9
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+8  13
+  Best cost 1534  0
+2  13
+  Best cost 1534  0
+10  11
+  Best cost 1534  0
+12  6
+  Best cost 1534  0
+12  4
+  Best cost 1534  0
+0  18
+  Best cost 1534  0
+8  15
+  Best cost 1534  0
+6  15
+  Best cost 1534  0
+12  9
+  Best cost 1534  0
+8  14
+  Best cost 1534  0
+11  10
+  Best cost 1534  0
+11  9
+  Best cost 1534  0
+10  9
+  Best cost 1534  0
+10  10
+  Best cost 1534  0
+9  11
+  Best cost 1534  0
+13  9
+  Best cost 1534  0
+0  4
+  Best cost 1534  0
+10  9
+  Best cost 1534  0
+12  7
+  Best cost 1534  0
+11  9
+  Best cost 1534  0
+14  6
+  Best cost 1534  0
+7  16
+  Best cost 1534  0
+10  11
+  Best cost 1534  0
+14  7
+  Best cost 1534  0
+17  2
+  Best cost 1534  0
+11  9
+  Best cost 1534  0
+7  12
+  Best cost 1534  0
+10  10
+  Best cost 1534  0
+12  11
+  Best cost 1534  0
+12  7
+  Best cost 1534  0
+14  5
+  Best cost 1534  0
+10  11
+  Best cost 1534  0
+12  7
+  Best cost 1534  0
+14  5
+  Best cost 1534  0
+13  7
+  Best cost 1534  0
+9  9
+  Best cost 1534  0
+12  9
+  Best cost 1534  0
+11  8
+  Best cost 1534  0
+4  16
+  Best cost 1534  0
+11  10
+  Best cost 1534  0
+6  15
+  Best cost 1534  0
+13  5
+  Best cost 1534  0
+14  6
+  Best cost 1534  0
+11  9
+  Best cost 1534  0
+11  10
+  Best cost 1534  0
+8  12
+  Best cost 1534  0
+10  9
+  Best cost 1534  0
+5  6
+  Best cost 1534  0
+11  8
+  Best cost 1534  0
+11  8
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+11  9
+  Best cost 1534  0
+11  9
+  Best cost 1534  0
+14  4
+  Best cost 1534  0
+7  10
+  Best cost 1534  0
+13  7
+  Best cost 1534  0
+10  10
+  Best cost 1534  0
+12  10
+  Best cost 1534  0
+17  2
+  Best cost 1534  0
+10  11
+  Best cost 1534  0
+9  6
+  Best cost 1534  0
+11  0
+  Best cost 1534  0
+11  11
+  Best cost 1534  0
+14  7
+  Best cost 1534  0
+9  12
+  Best cost 1534  0
+10  5
+  Best cost 1534  0
+9  7
+  Best cost 1534  0
+5  12
+  Best cost 1534  0
+9  8
+  Best cost 1534  0
+7  15
+  Best cost 1534  0
+9  4
+  Best cost 1534  0
+13  7
+  Best cost 1534  0
+5  16
+  Best cost 1534  0
+12  8
+  Best cost 1534  0
+8  11
+  Best cost 1534  0
+16  3
+  Best cost 1534  0
+9  6
+  Best cost 1534  0
+8  11
+  Best cost 1534  0
+11  10
+  Best cost 1534  0
+11  10
+  Best cost 1534  0
+12  7
+  Best cost 1534  0
+16  2
+  Best cost 1534  0
+8  8
+  Best cost 1534  0
+7  12
+  Best cost 1534  0
+11  9
+  Best cost 1534  0
+8  13
+  Best cost 1534  0
+15  4
+  Best cost 1534  0
+6  13
+  Best cost 1534  0
+13  4
+  Best cost 1534  0
+10  13
+  Best cost 1534  0
+9  10
+  Best cost 1534  0
+10  10
+  Best cost 1534  0
+13  5
+  Best cost 1534  0
+13  7
+  Best cost 1534  0
+14  7
+  Best cost 1534  0
+14  6
+  Best cost 1534  0
+9  9
+  Best cost 1534  0
+17  2
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+10  11
+  Best cost 1534  0
+10  11
+  Best cost 1534  0
+11  11
+  Best cost 1534  0
+7  15
+  Best cost 1534  0
+9  9
+  Best cost 1534  0
+16  4
+  Best cost 1534  0
+9  12
+  Best cost 1534  0
+8  13
+  Best cost 1534  0
+6  5
+  Best cost 1534  0
+10  12
+  Best cost 1534  0
+8  12
+  Best cost 1534  0
+14  6
+  Best cost 1534  0
+13  3
+  Best cost 1534  0
+11  7
+  Best cost 1534  0
+12  7
+  Best cost 1534  0
+15  5
+  Best cost 1534  0
+7  12
+  Best cost 1534  0
+8  13
+  Best cost 1534  0
+10  9
+  Best cost 1534  0
+8  7
+  Best cost 1534  0
+3  4
+  Best cost 1534  0
+10  9
+  Best cost 1534  0
+12  8
+  Best cost 1534  0
+11  8
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+10  8
+  Best cost 1534  0
+11  8
+  Best cost 1534  0
+10  10
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+13  8
+  Best cost 1534  0
+12  11
+  Best cost 1534  0
+11  12
+  Best cost 1534  0
+8  11
+  Best cost 1534  0
+16  2
+  Best cost 1534  0
+Time limit (10 s) reached at generation 200
+Improvement log saved with final result
+
+OUTPUTING

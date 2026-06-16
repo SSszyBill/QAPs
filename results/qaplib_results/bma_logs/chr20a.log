@@ -1,0 +1,251 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr20a.dat
+Extracted Name: chr20a
+Problem Size (N): 20
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/chr20a_bma_improvements.txt
+New best cost: 2232 at time: 0.205794 s
+4  15
+  Best cost 2232  0
+8  10
+  Best cost 2232  0
+New best cost: 2192 at time: 0.287622 s
+2  2
+  Best cost 2192  0.273666
+17  6
+  Best cost 2192  0.273666
+13  7
+  Best cost 2192  0.273666
+12  9
+  Best cost 2192  0.273666
+9  6
+  Best cost 2192  0.273666
+11  6
+  Best cost 2192  0.273666
+13  8
+  Best cost 2192  0.273666
+9  4
+  Best cost 2192  0.273666
+9  6
+  Best cost 2192  0.273666
+10  3
+  Best cost 2192  0.273666
+13  4
+  Best cost 2192  0.273666
+10  11
+  Best cost 2192  0.273666
+13  5
+  Best cost 2192  0.273666
+4  5
+  Best cost 2192  0.273666
+6  13
+  Best cost 2192  0.273666
+5  4
+  Best cost 2192  0.273666
+12  2
+  Best cost 2192  0.273666
+4  0
+  Best cost 2192  0.273666
+16  6
+  Best cost 2192  0.273666
+7  7
+  Best cost 2192  0.273666
+8  2
+  Best cost 2192  0.273666
+8  5
+  Best cost 2192  0.273666
+4  9
+  Best cost 2192  0.273666
+5  2
+  Best cost 2192  0.273666
+6  5
+  Best cost 2192  0.273666
+6  0
+  Best cost 2192  0.273666
+7  6
+  Best cost 2192  0.273666
+4  0
+  Best cost 2192  0.273666
+8  4
+  Best cost 2192  0.273666
+6  6
+  Best cost 2192  0.273666
+12  9
+  Best cost 2192  0.273666
+16  7
+  Best cost 2192  0.273666
+9  15
+  Best cost 2192  0.273666
+10  9
+  Best cost 2192  0.273666
+9  2
+  Best cost 2192  0.273666
+0  4
+  Best cost 2192  0.273666
+6  7
+  Best cost 2192  0.273666
+15  6
+  Best cost 2192  0.273666
+5  11
+  Best cost 2192  0.273666
+15  8
+  Best cost 2192  0.273666
+4  0
+  Best cost 2192  0.273666
+13  9
+  Best cost 2192  0.273666
+14  7
+  Best cost 2192  0.273666
+6  5
+  Best cost 2192  0.273666
+16  5
+  Best cost 2192  0.273666
+11  10
+  Best cost 2192  0.273666
+15  6
+  Best cost 2192  0.273666
+10  9
+  Best cost 2192  0.273666
+10  8
+  Best cost 2192  0.273666
+6  10
+  Best cost 2192  0.273666
+11  8
+  Best cost 2192  0.273666
+2  2
+  Best cost 2192  0.273666
+9  9
+  Best cost 2192  0.273666
+13  12
+  Best cost 2192  0.273666
+17  6
+  Best cost 2192  0.273666
+4  0
+  Best cost 2192  0.273666
+8  11
+  Best cost 2192  0.273666
+9  11
+  Best cost 2192  0.273666
+13  8
+  Best cost 2192  0.273666
+15  9
+  Best cost 2192  0.273666
+4  9
+  Best cost 2192  0.273666
+11  4
+  Best cost 2192  0.273666
+13  9
+  Best cost 2192  0.273666
+14  8
+  Best cost 2192  0.273666
+6  5
+  Best cost 2192  0.273666
+5  7
+  Best cost 2192  0.273666
+6  9
+  Best cost 2192  0.273666
+2  2
+  Best cost 2192  0.273666
+2  2
+  Best cost 2192  0.273666
+2  2
+  Best cost 2192  0.273666
+6  10
+  Best cost 2192  0.273666
+8  14
+  Best cost 2192  0.273666
+14  10
+  Best cost 2192  0.273666
+15  8
+  Best cost 2192  0.273666
+4  8
+  Best cost 2192  0.273666
+8  4
+  Best cost 2192  0.273666
+7  5
+  Best cost 2192  0.273666
+15  9
+  Best cost 2192  0.273666
+0  4
+  Best cost 2192  0.273666
+8  9
+  Best cost 2192  0.273666
+4  7
+  Best cost 2192  0.273666
+13  9
+  Best cost 2192  0.273666
+12  11
+  Best cost 2192  0.273666
+8  16
+  Best cost 2192  0.273666
+15  8
+  Best cost 2192  0.273666
+5  6
+  Best cost 2192  0.273666
+5  6
+  Best cost 2192  0.273666
+6  4
+  Best cost 2192  0.273666
+13  9
+  Best cost 2192  0.273666
+7  4
+  Best cost 2192  0.273666
+6  14
+  Best cost 2192  0.273666
+13  0
+  Best cost 2192  0.273666
+10  14
+  Best cost 2192  0.273666
+7  9
+  Best cost 2192  0.273666
+9  15
+  Best cost 2192  0.273666
+12  6
+  Best cost 2192  0.273666
+13  10
+  Best cost 2192  0.273666
+14  8
+  Best cost 2192  0.273666
+6  5
+  Best cost 2192  0.273666
+15  9
+  Best cost 2192  0.273666
+2  2
+  Best cost 2192  0.273666
+6  11
+  Best cost 2192  0.273666
+9  5
+  Best cost 2192  0.273666
+6  8
+  Best cost 2192  0.273666
+9  5
+  Best cost 2192  0.273666
+3  4
+  Best cost 2192  0.273666
+8  2
+  Best cost 2192  0.273666
+7  4
+  Best cost 2192  0.273666
+4  6
+  Best cost 2192  0.273666
+0  4
+  Best cost 2192  0.273666
+6  5
+  Best cost 2192  0.273666
+10  13
+  Best cost 2192  0.273666
+7  7
+  Best cost 2192  0.273666
+7  4
+  Best cost 2192  0.273666
+5  9
+  Best cost 2192  0.273666
+11  14
+  Best cost 2192  0.273666
+10  2
+  Best cost 2192  0.273666
+5  7
+  Best cost 2192  0.273666
+Time limit (10 s) reached at generation 120
+Improvement log saved with final result
+
+OUTPUTING

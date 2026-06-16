@@ -1,0 +1,37 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr15b.dat
+Instance Name: chr15b
+New best cost: 55404.000000 at iteration 1 (time: 0.000013 s)
+New best cost: 41634.000000 at iteration 2 (time: 0.000023 s)
+New best cost: 30224.000000 at iteration 3 (time: 0.000029 s)
+New best cost: 18408.000000 at iteration 4 (time: 0.000036 s)
+New best cost: 15084.000000 at iteration 5 (time: 0.000041 s)
+New best cost: 13964.000000 at iteration 6 (time: 0.000047 s)
+New best cost: 13574.000000 at iteration 7 (time: 0.000054 s)
+New best cost: 13466.000000 at iteration 8 (time: 0.000060 s)
+New best cost: 13224.000000 at iteration 9 (time: 0.000066 s)
+New best cost: 12772.000000 at iteration 15 (time: 0.000085 s)
+New best cost: 12736.000000 at iteration 16 (time: 0.000092 s)
+New best cost: 12614.000000 at iteration 17 (time: 0.000097 s)
+New best cost: 12566.000000 at iteration 100 (time: 0.000309 s)
+New best cost: 11628.000000 at iteration 101 (time: 0.000316 s)
+New best cost: 11146.000000 at iteration 102 (time: 0.000322 s)
+New best cost: 11108.000000 at iteration 103 (time: 0.000327 s)
+New best cost: 10750.000000 at iteration 926 (time: 0.002530 s)
+New best cost: 10658.000000 at iteration 980 (time: 0.002720 s)
+New best cost: 10136.000000 at iteration 981 (time: 0.002729 s)
+New best cost: 9112.000000 at iteration 983 (time: 0.002740 s)
+New best cost: 8990.000000 at iteration 984 (time: 0.002746 s)
+New best cost: 8210.000000 at iteration 4232 (time: 0.011399 s)
+New best cost: 7990.000000 at iteration 4289 (time: 0.011543 s)
+Time limit (10.00 s) reached at iteration 6348118
+Trial 1/1 Cost: 7990.000000
+
+--- Final Results ---
+Instance: chr15b
+Global Best Cost: 7990.000000
+Total Time: 10.000005 seconds
+Improvement log saved to results/baseline/chr15b_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

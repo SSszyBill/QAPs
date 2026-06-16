@@ -1,0 +1,70 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/tho40.dat
+Extracted Name: tho40
+Problem Size (N): 40
+Ignored extra info in header:   
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/tho40_bma_improvements.txt
+New best cost: 240542 at time: 1.0213 s
+33  13
+  Best cost 240542  0
+24  19
+  Best cost 240542  0
+24  19
+  Best cost 240542  0
+23  24
+  Best cost 240542  0
+New best cost: 240516 at time: 1.83243 s
+29  14
+  Best cost 240516  1.64122
+30  17
+  Best cost 240516  1.64122
+23  19
+  Best cost 240516  1.64122
+26  18
+  Best cost 240516  1.64122
+26  20
+  Best cost 240516  1.64122
+16  24
+  Best cost 240516  1.64122
+22  26
+  Best cost 240516  1.64122
+24  23
+  Best cost 240516  1.64122
+22  26
+  Best cost 240516  1.64122
+20  13
+  Best cost 240516  1.64122
+20  12
+  Best cost 240516  1.64122
+21  22
+  Best cost 240516  1.64122
+16  25
+  Best cost 240516  1.64122
+26  13
+  Best cost 240516  1.64122
+20  24
+  Best cost 240516  1.64122
+22  18
+  Best cost 240516  1.64122
+23  16
+  Best cost 240516  1.64122
+5  3
+  Best cost 240516  1.64122
+27  13
+  Best cost 240516  1.64122
+26  20
+  Best cost 240516  1.64122
+21  8
+  Best cost 240516  1.64122
+18  20
+  Best cost 240516  1.64122
+25  21
+  Best cost 240516  1.64122
+11  4
+  Best cost 240516  1.64122
+19  19
+  Best cost 240516  1.64122
+Time limit (10 s) reached at generation 29
+Improvement log saved with final result
+
+OUTPUTING

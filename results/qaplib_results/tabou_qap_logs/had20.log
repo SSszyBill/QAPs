@@ -1,0 +1,48 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/had20.dat
+Instance Name: had20
+New best cost: 7452.000000 at iteration 1 (time: 0.000036 s)
+New best cost: 7360.000000 at iteration 2 (time: 0.000058 s)
+New best cost: 7316.000000 at iteration 3 (time: 0.000073 s)
+New best cost: 7276.000000 at iteration 4 (time: 0.000086 s)
+New best cost: 7236.000000 at iteration 5 (time: 0.000102 s)
+New best cost: 7208.000000 at iteration 6 (time: 0.000115 s)
+New best cost: 7188.000000 at iteration 7 (time: 0.000128 s)
+New best cost: 7146.000000 at iteration 8 (time: 0.000142 s)
+New best cost: 7106.000000 at iteration 9 (time: 0.000154 s)
+New best cost: 7096.000000 at iteration 10 (time: 0.000167 s)
+New best cost: 7088.000000 at iteration 11 (time: 0.000190 s)
+New best cost: 7082.000000 at iteration 12 (time: 0.000203 s)
+New best cost: 7076.000000 at iteration 13 (time: 0.000216 s)
+New best cost: 7070.000000 at iteration 14 (time: 0.000233 s)
+New best cost: 7066.000000 at iteration 15 (time: 0.000245 s)
+New best cost: 7062.000000 at iteration 16 (time: 0.000259 s)
+New best cost: 7050.000000 at iteration 17 (time: 0.000274 s)
+New best cost: 7048.000000 at iteration 20 (time: 0.000302 s)
+New best cost: 7038.000000 at iteration 53 (time: 0.000539 s)
+New best cost: 7034.000000 at iteration 242 (time: 0.001867 s)
+New best cost: 7020.000000 at iteration 1638 (time: 0.011455 s)
+New best cost: 7008.000000 at iteration 1639 (time: 0.011472 s)
+New best cost: 6994.000000 at iteration 1640 (time: 0.011486 s)
+New best cost: 6984.000000 at iteration 1641 (time: 0.011499 s)
+New best cost: 6976.000000 at iteration 1642 (time: 0.011511 s)
+New best cost: 6956.000000 at iteration 1643 (time: 0.011523 s)
+New best cost: 6944.000000 at iteration 1644 (time: 0.011535 s)
+New best cost: 6940.000000 at iteration 1645 (time: 0.011547 s)
+New best cost: 6936.000000 at iteration 1646 (time: 0.011559 s)
+New best cost: 6934.000000 at iteration 1647 (time: 0.011571 s)
+New best cost: 6930.000000 at iteration 1830 (time: 0.012975 s)
+New best cost: 6926.000000 at iteration 1927 (time: 0.013622 s)
+New best cost: 6924.000000 at iteration 1938 (time: 0.013694 s)
+New best cost: 6922.000000 at iteration 1939 (time: 0.013705 s)
+Time limit (10.00 s) reached at iteration 3752896
+Trial 1/1 Cost: 6922.000000
+
+--- Final Results ---
+Instance: had20
+Global Best Cost: 6922.000000
+Total Time: 10.000008 seconds
+Improvement log saved to results/baseline/had20_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

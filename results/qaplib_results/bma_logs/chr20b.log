@@ -1,0 +1,303 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr20b.dat
+Extracted Name: chr20b
+Problem Size (N): 20
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/chr20b_bma_improvements.txt
+New best cost: 2346 at time: 0.218241 s
+5  11
+  Best cost 2346  0
+New best cost: 2298 at time: 0.258809 s
+4  11
+  Best cost 2298  0.218294
+12  4
+  Best cost 2298  0.218294
+13  3
+  Best cost 2298  0.218294
+13  9
+  Best cost 2298  0.218294
+9  12
+  Best cost 2298  0.218294
+12  9
+  Best cost 2298  0.218294
+12  2
+  Best cost 2298  0.218294
+5  12
+  Best cost 2298  0.218294
+11  11
+  Best cost 2298  0.218294
+9  12
+  Best cost 2298  0.218294
+11  11
+  Best cost 2298  0.218294
+13  10
+  Best cost 2298  0.218294
+14  7
+  Best cost 2298  0.218294
+11  8
+  Best cost 2298  0.218294
+8  7
+  Best cost 2298  0.218294
+14  9
+  Best cost 2298  0.218294
+13  10
+  Best cost 2298  0.218294
+7  2
+  Best cost 2298  0.218294
+11  13
+  Best cost 2298  0.218294
+13  7
+  Best cost 2298  0.218294
+5  11
+  Best cost 2298  0.218294
+7  7
+  Best cost 2298  0.218294
+7  18
+  Best cost 2298  0.218294
+2  2
+  Best cost 2298  0.218294
+16  6
+  Best cost 2298  0.218294
+13  7
+  Best cost 2298  0.218294
+2  2
+  Best cost 2298  0.218294
+12  10
+  Best cost 2298  0.218294
+7  16
+  Best cost 2298  0.218294
+4  0
+  Best cost 2298  0.218294
+10  10
+  Best cost 2298  0.218294
+13  7
+  Best cost 2298  0.218294
+15  5
+  Best cost 2298  0.218294
+13  6
+  Best cost 2298  0.218294
+8  0
+  Best cost 2298  0.218294
+14  9
+  Best cost 2298  0.218294
+16  3
+  Best cost 2298  0.218294
+12  9
+  Best cost 2298  0.218294
+14  4
+  Best cost 2298  0.218294
+10  8
+  Best cost 2298  0.218294
+14  8
+  Best cost 2298  0.218294
+12  12
+  Best cost 2298  0.218294
+10  12
+  Best cost 2298  0.218294
+14  5
+  Best cost 2298  0.218294
+15  8
+  Best cost 2298  0.218294
+9  13
+  Best cost 2298  0.218294
+11  11
+  Best cost 2298  0.218294
+10  15
+  Best cost 2298  0.218294
+4  12
+  Best cost 2298  0.218294
+14  10
+  Best cost 2298  0.218294
+2  9
+  Best cost 2298  0.218294
+12  9
+  Best cost 2298  0.218294
+14  8
+  Best cost 2298  0.218294
+14  8
+  Best cost 2298  0.218294
+14  8
+  Best cost 2298  0.218294
+3  9
+  Best cost 2298  0.218294
+13  11
+  Best cost 2298  0.218294
+8  4
+  Best cost 2298  0.218294
+6  6
+  Best cost 2298  0.218294
+14  9
+  Best cost 2298  0.218294
+6  16
+  Best cost 2298  0.218294
+9  11
+  Best cost 2298  0.218294
+2  2
+  Best cost 2298  0.218294
+17  4
+  Best cost 2298  0.218294
+10  10
+  Best cost 2298  0.218294
+13  4
+  Best cost 2298  0.218294
+16  6
+  Best cost 2298  0.218294
+2  2
+  Best cost 2298  0.218294
+2  2
+  Best cost 2298  0.218294
+10  5
+  Best cost 2298  0.218294
+16  4
+  Best cost 2298  0.218294
+10  12
+  Best cost 2298  0.218294
+5  16
+  Best cost 2298  0.218294
+9  12
+  Best cost 2298  0.218294
+12  10
+  Best cost 2298  0.218294
+2  4
+  Best cost 2298  0.218294
+2  4
+  Best cost 2298  0.218294
+11  9
+  Best cost 2298  0.218294
+6  9
+  Best cost 2298  0.218294
+12  2
+  Best cost 2298  0.218294
+13  7
+  Best cost 2298  0.218294
+12  8
+  Best cost 2298  0.218294
+7  14
+  Best cost 2298  0.218294
+15  6
+  Best cost 2298  0.218294
+11  9
+  Best cost 2298  0.218294
+13  12
+  Best cost 2298  0.218294
+13  4
+  Best cost 2298  0.218294
+15  8
+  Best cost 2298  0.218294
+8  5
+  Best cost 2298  0.218294
+10  4
+  Best cost 2298  0.218294
+6  6
+  Best cost 2298  0.218294
+8  2
+  Best cost 2298  0.218294
+11  14
+  Best cost 2298  0.218294
+13  3
+  Best cost 2298  0.218294
+5  9
+  Best cost 2298  0.218294
+5  12
+  Best cost 2298  0.218294
+11  11
+  Best cost 2298  0.218294
+8  4
+  Best cost 2298  0.218294
+14  0
+  Best cost 2298  0.218294
+0  2
+  Best cost 2298  0.218294
+14  10
+  Best cost 2298  0.218294
+11  8
+  Best cost 2298  0.218294
+9  7
+  Best cost 2298  0.218294
+10  7
+  Best cost 2298  0.218294
+15  10
+  Best cost 2298  0.218294
+14  9
+  Best cost 2298  0.218294
+10  13
+  Best cost 2298  0.218294
+11  9
+  Best cost 2298  0.218294
+13  9
+  Best cost 2298  0.218294
+14  10
+  Best cost 2298  0.218294
+15  8
+  Best cost 2298  0.218294
+14  8
+  Best cost 2298  0.218294
+11  14
+  Best cost 2298  0.218294
+15  7
+  Best cost 2298  0.218294
+10  10
+  Best cost 2298  0.218294
+12  12
+  Best cost 2298  0.218294
+13  10
+  Best cost 2298  0.218294
+16  5
+  Best cost 2298  0.218294
+10  13
+  Best cost 2298  0.218294
+15  8
+  Best cost 2298  0.218294
+6  15
+  Best cost 2298  0.218294
+11  13
+  Best cost 2298  0.218294
+3  4
+  Best cost 2298  0.218294
+7  12
+  Best cost 2298  0.218294
+12  12
+  Best cost 2298  0.218294
+12  11
+  Best cost 2298  0.218294
+11  12
+  Best cost 2298  0.218294
+11  12
+  Best cost 2298  0.218294
+6  13
+  Best cost 2298  0.218294
+12  6
+  Best cost 2298  0.218294
+12  10
+  Best cost 2298  0.218294
+9  16
+  Best cost 2298  0.218294
+14  10
+  Best cost 2298  0.218294
+14  7
+  Best cost 2298  0.218294
+12  13
+  Best cost 2298  0.218294
+15  8
+  Best cost 2298  0.218294
+11  12
+  Best cost 2298  0.218294
+10  10
+  Best cost 2298  0.218294
+6  9
+  Best cost 2298  0.218294
+12  6
+  Best cost 2298  0.218294
+18  2
+  Best cost 2298  0.218294
+9  14
+  Best cost 2298  0.218294
+6  9
+  Best cost 2298  0.218294
+13  10
+  Best cost 2298  0.218294
+6  8
+  Best cost 2298  0.218294
+Time limit (10 s) reached at generation 146
+Improvement log saved with final result
+
+OUTPUTING

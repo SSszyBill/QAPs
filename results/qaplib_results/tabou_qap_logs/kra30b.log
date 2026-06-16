@@ -1,0 +1,68 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/kra30b.dat
+Instance Name: kra30b
+New best cost: 129680.000000 at iteration 1 (time: 0.000045 s)
+New best cost: 125060.000000 at iteration 2 (time: 0.000061 s)
+New best cost: 120820.000000 at iteration 3 (time: 0.000075 s)
+New best cost: 117200.000000 at iteration 4 (time: 0.000087 s)
+New best cost: 114500.000000 at iteration 5 (time: 0.000100 s)
+New best cost: 112120.000000 at iteration 6 (time: 0.000112 s)
+New best cost: 110120.000000 at iteration 7 (time: 0.000125 s)
+New best cost: 107920.000000 at iteration 8 (time: 0.000137 s)
+New best cost: 106520.000000 at iteration 9 (time: 0.000155 s)
+New best cost: 105320.000000 at iteration 10 (time: 0.000181 s)
+New best cost: 104120.000000 at iteration 11 (time: 0.000193 s)
+New best cost: 103320.000000 at iteration 12 (time: 0.000204 s)
+New best cost: 102600.000000 at iteration 13 (time: 0.000214 s)
+New best cost: 101700.000000 at iteration 14 (time: 0.000224 s)
+New best cost: 101000.000000 at iteration 15 (time: 0.000234 s)
+New best cost: 100200.000000 at iteration 16 (time: 0.000244 s)
+New best cost: 99500.000000 at iteration 17 (time: 0.000254 s)
+New best cost: 99000.000000 at iteration 18 (time: 0.000265 s)
+New best cost: 98600.000000 at iteration 19 (time: 0.000275 s)
+New best cost: 98500.000000 at iteration 20 (time: 0.000286 s)
+New best cost: 98300.000000 at iteration 22 (time: 0.000304 s)
+New best cost: 97900.000000 at iteration 23 (time: 0.000315 s)
+New best cost: 97700.000000 at iteration 24 (time: 0.000325 s)
+New best cost: 97600.000000 at iteration 25 (time: 0.000336 s)
+New best cost: 97500.000000 at iteration 26 (time: 0.000346 s)
+New best cost: 97400.000000 at iteration 41 (time: 0.000461 s)
+New best cost: 97100.000000 at iteration 69 (time: 0.000675 s)
+New best cost: 96700.000000 at iteration 70 (time: 0.000685 s)
+New best cost: 96500.000000 at iteration 86 (time: 0.000814 s)
+New best cost: 96300.000000 at iteration 87 (time: 0.000824 s)
+New best cost: 96170.000000 at iteration 542 (time: 0.004009 s)
+New best cost: 95970.000000 at iteration 543 (time: 0.004021 s)
+New best cost: 95770.000000 at iteration 556 (time: 0.004117 s)
+New best cost: 95470.000000 at iteration 557 (time: 0.004128 s)
+New best cost: 95170.000000 at iteration 558 (time: 0.004138 s)
+New best cost: 95070.000000 at iteration 559 (time: 0.004148 s)
+New best cost: 94930.000000 at iteration 581 (time: 0.004306 s)
+New best cost: 94580.000000 at iteration 582 (time: 0.004317 s)
+New best cost: 94350.000000 at iteration 583 (time: 0.004327 s)
+New best cost: 94150.000000 at iteration 584 (time: 0.004336 s)
+New best cost: 94050.000000 at iteration 585 (time: 0.004346 s)
+New best cost: 93660.000000 at iteration 687 (time: 0.005031 s)
+New best cost: 93460.000000 at iteration 688 (time: 0.005041 s)
+New best cost: 93360.000000 at iteration 689 (time: 0.005050 s)
+New best cost: 92960.000000 at iteration 697 (time: 0.005107 s)
+New best cost: 92660.000000 at iteration 698 (time: 0.005116 s)
+New best cost: 92460.000000 at iteration 699 (time: 0.005125 s)
+New best cost: 92260.000000 at iteration 700 (time: 0.005135 s)
+New best cost: 92160.000000 at iteration 708 (time: 0.005192 s)
+New best cost: 92060.000000 at iteration 903 (time: 0.006473 s)
+New best cost: 91950.000000 at iteration 1692 (time: 0.011411 s)
+New best cost: 91650.000000 at iteration 1693 (time: 0.011421 s)
+New best cost: 91490.000000 at iteration 6602 (time: 0.041412 s)
+New best cost: 91420.000000 at iteration 23786 (time: 0.144574 s)
+Time limit (10.00 s) reached at iteration 1671822
+Trial 1/1 Cost: 91420.000000
+
+--- Final Results ---
+Instance: kra30b
+Global Best Cost: 91420.000000
+Total Time: 10.000012 seconds
+Improvement log saved to results/baseline/kra30b_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

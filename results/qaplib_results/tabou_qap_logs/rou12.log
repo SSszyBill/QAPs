@@ -1,0 +1,26 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/rou12.dat
+Instance Name: rou12
+New best cost: 281684.000000 at iteration 1 (time: 0.000015 s)
+New best cost: 267774.000000 at iteration 2 (time: 0.000034 s)
+New best cost: 259100.000000 at iteration 3 (time: 0.000046 s)
+New best cost: 255284.000000 at iteration 4 (time: 0.000057 s)
+New best cost: 250508.000000 at iteration 6 (time: 0.000072 s)
+New best cost: 249620.000000 at iteration 7 (time: 0.000083 s)
+New best cost: 241550.000000 at iteration 20 (time: 0.000143 s)
+New best cost: 240038.000000 at iteration 67 (time: 0.000387 s)
+New best cost: 238954.000000 at iteration 166 (time: 0.000732 s)
+New best cost: 238502.000000 at iteration 167 (time: 0.000745 s)
+New best cost: 238134.000000 at iteration 168 (time: 0.000753 s)
+New best cost: 235528.000000 at iteration 197 (time: 0.000842 s)
+Time limit (10.00 s) reached at iteration 9311393
+Trial 1/1 Cost: 235528.000000
+
+--- Final Results ---
+Instance: rou12
+Global Best Cost: 235528.000000
+Total Time: 10.000006 seconds
+Improvement log saved to results/baseline/rou12_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

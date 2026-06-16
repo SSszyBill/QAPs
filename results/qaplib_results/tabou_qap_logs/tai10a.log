@@ -1,0 +1,26 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/tai10a.dat
+Instance Name: tai10a
+New best cost: 153264.000000 at iteration 1 (time: 0.000016 s)
+New best cost: 146066.000000 at iteration 2 (time: 0.000037 s)
+New best cost: 144736.000000 at iteration 3 (time: 0.000049 s)
+New best cost: 143648.000000 at iteration 47 (time: 0.000204 s)
+New best cost: 143260.000000 at iteration 50 (time: 0.000225 s)
+New best cost: 139018.000000 at iteration 52 (time: 0.000240 s)
+New best cost: 138396.000000 at iteration 107 (time: 0.000422 s)
+New best cost: 138130.000000 at iteration 118 (time: 0.000465 s)
+New best cost: 137756.000000 at iteration 463 (time: 0.001493 s)
+New best cost: 136272.000000 at iteration 464 (time: 0.001507 s)
+New best cost: 135640.000000 at iteration 504 (time: 0.001631 s)
+New best cost: 135028.000000 at iteration 864 (time: 0.002673 s)
+Time limit (10.00 s) reached at iteration 12333158
+Trial 1/1 Cost: 135028.000000
+
+--- Final Results ---
+Instance: tai10a
+Global Best Cost: 135028.000000
+Total Time: 10.000004 seconds
+Improvement log saved to results/baseline/tai10a_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

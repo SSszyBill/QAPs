@@ -1,0 +1,24 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/lipa70a.dat
+Extracted Name: lipa70a
+Problem Size (N): 70
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/lipa70a_bma_improvements.txt
+New best cost: 169755 at time: 4.28411 s
+42  36
+  Best cost 169755  0
+51  24
+  Best cost 169755  0
+38  41
+  Best cost 169755  0
+37  47
+  Best cost 169755  0
+44  36
+  Best cost 169755  0
+51  26
+  Best cost 169755  0
+41  39
+  Best cost 169755  0
+Time limit (10 s) reached at generation 7
+Improvement log saved with final result
+
+OUTPUTING

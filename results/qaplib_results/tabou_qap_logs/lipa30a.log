@@ -1,0 +1,62 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/lipa30a.dat
+Instance Name: lipa30a
+New best cost: 13784.000000 at iteration 1 (time: 0.000122 s)
+New best cost: 13731.000000 at iteration 2 (time: 0.000166 s)
+New best cost: 13679.000000 at iteration 3 (time: 0.000201 s)
+New best cost: 13635.000000 at iteration 4 (time: 0.000233 s)
+New best cost: 13605.000000 at iteration 5 (time: 0.000262 s)
+New best cost: 13581.000000 at iteration 6 (time: 0.000290 s)
+New best cost: 13558.000000 at iteration 7 (time: 0.000318 s)
+New best cost: 13522.000000 at iteration 8 (time: 0.000348 s)
+New best cost: 13507.000000 at iteration 9 (time: 0.000378 s)
+New best cost: 13496.000000 at iteration 10 (time: 0.000408 s)
+New best cost: 13490.000000 at iteration 11 (time: 0.000436 s)
+New best cost: 13477.000000 at iteration 12 (time: 0.000469 s)
+New best cost: 13472.000000 at iteration 13 (time: 0.000499 s)
+New best cost: 13465.000000 at iteration 14 (time: 0.000526 s)
+New best cost: 13458.000000 at iteration 15 (time: 0.000553 s)
+New best cost: 13455.000000 at iteration 16 (time: 0.000580 s)
+New best cost: 13453.000000 at iteration 17 (time: 0.000607 s)
+New best cost: 13448.000000 at iteration 18 (time: 0.000636 s)
+New best cost: 13443.000000 at iteration 23 (time: 0.000749 s)
+New best cost: 13434.000000 at iteration 24 (time: 0.000778 s)
+New best cost: 13433.000000 at iteration 25 (time: 0.000804 s)
+New best cost: 13418.000000 at iteration 45 (time: 0.001215 s)
+New best cost: 13410.000000 at iteration 46 (time: 0.001246 s)
+New best cost: 13405.000000 at iteration 47 (time: 0.001277 s)
+New best cost: 13402.000000 at iteration 51 (time: 0.001366 s)
+New best cost: 13400.000000 at iteration 72 (time: 0.001795 s)
+New best cost: 13398.000000 at iteration 88 (time: 0.002132 s)
+New best cost: 13396.000000 at iteration 89 (time: 0.002165 s)
+New best cost: 13395.000000 at iteration 90 (time: 0.002194 s)
+New best cost: 13385.000000 at iteration 98 (time: 0.002374 s)
+New best cost: 13374.000000 at iteration 99 (time: 0.002405 s)
+New best cost: 13373.000000 at iteration 423 (time: 0.007554 s)
+New best cost: 13370.000000 at iteration 424 (time: 0.007567 s)
+New best cost: 13369.000000 at iteration 425 (time: 0.007578 s)
+New best cost: 13368.000000 at iteration 474 (time: 0.007974 s)
+New best cost: 13351.000000 at iteration 476 (time: 0.007994 s)
+New best cost: 13334.000000 at iteration 477 (time: 0.008011 s)
+New best cost: 13329.000000 at iteration 478 (time: 0.008023 s)
+New best cost: 13325.000000 at iteration 480 (time: 0.008043 s)
+New best cost: 13324.000000 at iteration 561 (time: 0.008688 s)
+New best cost: 13322.000000 at iteration 562 (time: 0.008699 s)
+New best cost: 13318.000000 at iteration 627 (time: 0.009215 s)
+New best cost: 13314.000000 at iteration 628 (time: 0.009227 s)
+New best cost: 13310.000000 at iteration 629 (time: 0.009238 s)
+New best cost: 13291.000000 at iteration 635 (time: 0.009288 s)
+New best cost: 13287.000000 at iteration 636 (time: 0.009299 s)
+New best cost: 13279.000000 at iteration 637 (time: 0.009311 s)
+New best cost: 13178.000000 at iteration 638 (time: 0.009322 s)
+Time limit (10.00 s) reached at iteration 1698817
+Trial 1/1 Cost: 13178.000000
+
+--- Final Results ---
+Instance: lipa30a
+Global Best Cost: 13178.000000
+Total Time: 10.000012 seconds
+Improvement log saved to results/baseline/lipa30a_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

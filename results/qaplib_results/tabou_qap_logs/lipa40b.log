@@ -1,0 +1,72 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/lipa40b.dat
+Instance Name: lipa40b
+New best cost: 609241.000000 at iteration 1 (time: 0.000108 s)
+New best cost: 603098.000000 at iteration 2 (time: 0.000133 s)
+New best cost: 598454.000000 at iteration 3 (time: 0.000157 s)
+New best cost: 594284.000000 at iteration 4 (time: 0.000178 s)
+New best cost: 590329.000000 at iteration 5 (time: 0.000198 s)
+New best cost: 586791.000000 at iteration 6 (time: 0.000218 s)
+New best cost: 584540.000000 at iteration 7 (time: 0.000237 s)
+New best cost: 582409.000000 at iteration 8 (time: 0.000257 s)
+New best cost: 578493.000000 at iteration 9 (time: 0.000277 s)
+New best cost: 576975.000000 at iteration 10 (time: 0.000297 s)
+New best cost: 574848.000000 at iteration 11 (time: 0.000315 s)
+New best cost: 573390.000000 at iteration 12 (time: 0.000446 s)
+New best cost: 572012.000000 at iteration 13 (time: 0.000474 s)
+New best cost: 570674.000000 at iteration 14 (time: 0.000489 s)
+New best cost: 569700.000000 at iteration 15 (time: 0.000531 s)
+New best cost: 569160.000000 at iteration 16 (time: 0.000543 s)
+New best cost: 568903.000000 at iteration 17 (time: 0.000557 s)
+New best cost: 568138.000000 at iteration 18 (time: 0.000570 s)
+New best cost: 567267.000000 at iteration 19 (time: 0.000584 s)
+New best cost: 566141.000000 at iteration 20 (time: 0.000596 s)
+New best cost: 565738.000000 at iteration 21 (time: 0.000609 s)
+New best cost: 565308.000000 at iteration 22 (time: 0.000622 s)
+New best cost: 564503.000000 at iteration 23 (time: 0.000635 s)
+New best cost: 564318.000000 at iteration 24 (time: 0.000647 s)
+New best cost: 564018.000000 at iteration 26 (time: 0.000671 s)
+New best cost: 563969.000000 at iteration 27 (time: 0.000683 s)
+New best cost: 563662.000000 at iteration 41 (time: 0.000847 s)
+New best cost: 563546.000000 at iteration 47 (time: 0.000915 s)
+New best cost: 562160.000000 at iteration 48 (time: 0.000929 s)
+New best cost: 560832.000000 at iteration 49 (time: 0.000942 s)
+New best cost: 560802.000000 at iteration 51 (time: 0.000965 s)
+New best cost: 560790.000000 at iteration 54 (time: 0.001000 s)
+New best cost: 560206.000000 at iteration 55 (time: 0.001014 s)
+New best cost: 559177.000000 at iteration 75 (time: 0.001235 s)
+New best cost: 558460.000000 at iteration 82 (time: 0.001320 s)
+New best cost: 558422.000000 at iteration 83 (time: 0.001334 s)
+New best cost: 558141.000000 at iteration 85 (time: 0.001358 s)
+New best cost: 557408.000000 at iteration 86 (time: 0.001371 s)
+New best cost: 555303.000000 at iteration 88 (time: 0.001396 s)
+New best cost: 554540.000000 at iteration 90 (time: 0.001420 s)
+New best cost: 553188.000000 at iteration 91 (time: 0.001434 s)
+New best cost: 550948.000000 at iteration 92 (time: 0.001447 s)
+New best cost: 546517.000000 at iteration 93 (time: 0.001461 s)
+New best cost: 543421.000000 at iteration 94 (time: 0.001474 s)
+New best cost: 540396.000000 at iteration 95 (time: 0.001487 s)
+New best cost: 537848.000000 at iteration 96 (time: 0.001507 s)
+New best cost: 535784.000000 at iteration 97 (time: 0.001521 s)
+New best cost: 531731.000000 at iteration 98 (time: 0.001534 s)
+New best cost: 527682.000000 at iteration 99 (time: 0.001547 s)
+New best cost: 522077.000000 at iteration 100 (time: 0.001561 s)
+New best cost: 517773.000000 at iteration 101 (time: 0.001574 s)
+New best cost: 515059.000000 at iteration 102 (time: 0.001587 s)
+New best cost: 510140.000000 at iteration 103 (time: 0.001600 s)
+New best cost: 505583.000000 at iteration 104 (time: 0.001614 s)
+New best cost: 500293.000000 at iteration 105 (time: 0.001627 s)
+New best cost: 494339.000000 at iteration 106 (time: 0.001640 s)
+New best cost: 486396.000000 at iteration 107 (time: 0.001653 s)
+New best cost: 476581.000000 at iteration 108 (time: 0.001667 s)
+Time limit (10.00 s) reached at iteration 951790
+Trial 1/1 Cost: 476581.000000
+
+--- Final Results ---
+Instance: lipa40b
+Global Best Cost: 476581.000000
+Total Time: 10.000017 seconds
+Improvement log saved to results/baseline/lipa40b_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

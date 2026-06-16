@@ -1,0 +1,26 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/had16.dat
+Extracted Name: had16
+Problem Size (N): 16
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/had16_bma_improvements.txt
+New best cost: 3720 at time: 0.128763 s
+0  2
+  Best cost 3720  0
+2  4
+  Best cost 3720  0
+3  2
+  Best cost 3720  0
+2  0
+  Best cost 3720  0
+0  0
+  Best cost 3720  0
+0  2
+  Best cost 3720  0
+3  4
+  Best cost 3720  0
+2  0
+  Best cost 3720  0
+2  6
+  Best cost 3720  0
+0  0
+  Best cost 3720  0

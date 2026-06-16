@@ -1,0 +1,43 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr20a.dat
+Instance Name: chr20a
+New best cost: 9868.000000 at iteration 1 (time: 0.000031 s)
+New best cost: 8130.000000 at iteration 2 (time: 0.000050 s)
+New best cost: 6660.000000 at iteration 3 (time: 0.000063 s)
+New best cost: 5548.000000 at iteration 4 (time: 0.000075 s)
+New best cost: 5086.000000 at iteration 5 (time: 0.000087 s)
+New best cost: 4624.000000 at iteration 6 (time: 0.000098 s)
+New best cost: 4292.000000 at iteration 7 (time: 0.000109 s)
+New best cost: 3584.000000 at iteration 8 (time: 0.000121 s)
+New best cost: 3416.000000 at iteration 9 (time: 0.000131 s)
+New best cost: 3318.000000 at iteration 10 (time: 0.000145 s)
+New best cost: 3228.000000 at iteration 11 (time: 0.000157 s)
+New best cost: 3076.000000 at iteration 12 (time: 0.000169 s)
+New best cost: 2882.000000 at iteration 28 (time: 0.000289 s)
+New best cost: 2798.000000 at iteration 29 (time: 0.000304 s)
+New best cost: 2776.000000 at iteration 30 (time: 0.000315 s)
+New best cost: 2706.000000 at iteration 40 (time: 0.000393 s)
+New best cost: 2656.000000 at iteration 41 (time: 0.000406 s)
+New best cost: 2650.000000 at iteration 95 (time: 0.000821 s)
+New best cost: 2460.000000 at iteration 111 (time: 0.000949 s)
+New best cost: 2450.000000 at iteration 2606 (time: 0.014035 s)
+New best cost: 2442.000000 at iteration 2607 (time: 0.014054 s)
+New best cost: 2288.000000 at iteration 3092 (time: 0.015878 s)
+New best cost: 2256.000000 at iteration 3116 (time: 0.015980 s)
+New best cost: 2244.000000 at iteration 3117 (time: 0.015987 s)
+New best cost: 2240.000000 at iteration 6886 (time: 0.027272 s)
+New best cost: 2232.000000 at iteration 6887 (time: 0.027278 s)
+New best cost: 2222.000000 at iteration 23862 (time: 0.073450 s)
+New best cost: 2196.000000 at iteration 302693 (time: 0.828641 s)
+New best cost: 2192.000000 at iteration 566516 (time: 1.538000 s)
+Time limit (10.00 s) reached at iteration 3708802
+Trial 1/1 Cost: 2192.000000
+
+--- Final Results ---
+Instance: chr20a
+Global Best Cost: 2192.000000
+Total Time: 10.000008 seconds
+Improvement log saved to results/baseline/chr20a_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

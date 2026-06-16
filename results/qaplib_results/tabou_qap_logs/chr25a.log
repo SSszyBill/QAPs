@@ -1,0 +1,73 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr25a.dat
+Instance Name: chr25a
+New best cost: 15328.000000 at iteration 1 (time: 0.000075 s)
+New best cost: 11688.000000 at iteration 2 (time: 0.000108 s)
+New best cost: 9932.000000 at iteration 3 (time: 0.000137 s)
+New best cost: 8954.000000 at iteration 4 (time: 0.000163 s)
+New best cost: 8554.000000 at iteration 5 (time: 0.000194 s)
+New best cost: 8208.000000 at iteration 6 (time: 0.000215 s)
+New best cost: 7924.000000 at iteration 7 (time: 0.000241 s)
+New best cost: 7416.000000 at iteration 8 (time: 0.000263 s)
+New best cost: 7194.000000 at iteration 9 (time: 0.000290 s)
+New best cost: 6970.000000 at iteration 10 (time: 0.000311 s)
+New best cost: 6760.000000 at iteration 11 (time: 0.000335 s)
+New best cost: 6628.000000 at iteration 12 (time: 0.000356 s)
+New best cost: 6538.000000 at iteration 13 (time: 0.000379 s)
+New best cost: 6528.000000 at iteration 14 (time: 0.000403 s)
+New best cost: 6414.000000 at iteration 15 (time: 0.000424 s)
+New best cost: 6280.000000 at iteration 26 (time: 0.000598 s)
+New best cost: 6262.000000 at iteration 27 (time: 0.000622 s)
+New best cost: 6162.000000 at iteration 28 (time: 0.000643 s)
+New best cost: 6034.000000 at iteration 29 (time: 0.000664 s)
+New best cost: 5970.000000 at iteration 30 (time: 0.000684 s)
+New best cost: 5400.000000 at iteration 31 (time: 0.000705 s)
+New best cost: 5348.000000 at iteration 32 (time: 0.000726 s)
+New best cost: 5312.000000 at iteration 33 (time: 0.000746 s)
+New best cost: 5298.000000 at iteration 124 (time: 0.002107 s)
+New best cost: 5288.000000 at iteration 125 (time: 0.002133 s)
+New best cost: 5270.000000 at iteration 222 (time: 0.003568 s)
+New best cost: 5260.000000 at iteration 223 (time: 0.003593 s)
+New best cost: 5258.000000 at iteration 224 (time: 0.003614 s)
+New best cost: 5252.000000 at iteration 323 (time: 0.005101 s)
+New best cost: 5206.000000 at iteration 470 (time: 0.007091 s)
+New best cost: 5106.000000 at iteration 471 (time: 0.007138 s)
+New best cost: 5046.000000 at iteration 472 (time: 0.007160 s)
+New best cost: 4900.000000 at iteration 516 (time: 0.007653 s)
+New best cost: 4888.000000 at iteration 517 (time: 0.007673 s)
+New best cost: 4882.000000 at iteration 518 (time: 0.007688 s)
+New best cost: 4774.000000 at iteration 521 (time: 0.007724 s)
+New best cost: 4762.000000 at iteration 522 (time: 0.007739 s)
+New best cost: 4730.000000 at iteration 535 (time: 0.007881 s)
+New best cost: 4668.000000 at iteration 536 (time: 0.007900 s)
+New best cost: 4644.000000 at iteration 1651 (time: 0.017327 s)
+New best cost: 4596.000000 at iteration 1652 (time: 0.017335 s)
+New best cost: 4584.000000 at iteration 1670 (time: 0.017409 s)
+New best cost: 4384.000000 at iteration 1671 (time: 0.017416 s)
+New best cost: 4376.000000 at iteration 1672 (time: 0.017422 s)
+New best cost: 4350.000000 at iteration 1684 (time: 0.017475 s)
+New best cost: 4336.000000 at iteration 2290 (time: 0.019926 s)
+New best cost: 4296.000000 at iteration 2291 (time: 0.019932 s)
+New best cost: 4286.000000 at iteration 20984 (time: 0.097596 s)
+New best cost: 4240.000000 at iteration 21513 (time: 0.099828 s)
+New best cost: 4214.000000 at iteration 21514 (time: 0.099835 s)
+New best cost: 4194.000000 at iteration 21515 (time: 0.099841 s)
+New best cost: 4162.000000 at iteration 51572 (time: 0.224358 s)
+New best cost: 4038.000000 at iteration 58883 (time: 0.254741 s)
+New best cost: 4006.000000 at iteration 176947 (time: 0.743298 s)
+New best cost: 3962.000000 at iteration 176948 (time: 0.743317 s)
+New best cost: 3904.000000 at iteration 325915 (time: 1.360532 s)
+New best cost: 3874.000000 at iteration 325916 (time: 1.360544 s)
+New best cost: 3826.000000 at iteration 910327 (time: 3.782690 s)
+New best cost: 3796.000000 at iteration 910328 (time: 3.782710 s)
+Time limit (10.00 s) reached at iteration 2410552
+Trial 1/1 Cost: 3796.000000
+
+--- Final Results ---
+Instance: chr25a
+Global Best Cost: 3796.000000
+Total Time: 10.000006 seconds
+Improvement log saved to results/baseline/chr25a_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

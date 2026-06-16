@@ -1,0 +1,20 @@
+Solution of value: 372 found at iter. 1
+Solution of value: 324 found at iter. 2
+Solution of value: 284 found at iter. 3
+Solution of value: 254 found at iter. 4
+Solution of value: 234 found at iter. 5
+Solution of value: 216 found at iter. 6
+Solution of value: 206 found at iter. 7
+Solution of value: 200 found at iter. 8
+Solution of value: 194 found at iter. 9
+Solution of value: 190 found at iter. 10
+Solution of value: 186 found at iter. 11
+Solution of value: 182 found at iter. 12
+Solution of value: 178 found at iter. 13
+Solution of value: 170 found at iter. 14
+Solution of value: 166 found at iter. 15
+Solution of value: 164 found at iter. 16
+Solution of value: 160 found at iter. 17
+160 Solution found by tabu search:
+13 27 31 15 10 9 29 0 30 19 11 18 12 26 14 16 6 7 3 20 5 8 4 17 2 22 1 25 23 28 24 21 
+Average cost: 160.000000, average dev: inf

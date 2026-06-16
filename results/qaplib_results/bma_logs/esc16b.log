@@ -1,0 +1,44 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/esc16b.dat
+Extracted Name: esc16b
+Problem Size (N): 16
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/esc16b_bma_improvements.txt
+New best cost: 292 at time: 2.13736 s
+8  12
+  Best cost 292  0
+9  7
+  Best cost 292  0
+4  13
+  Best cost 292  0
+9  10
+  Best cost 292  0
+10  6
+  Best cost 292  0
+12  5
+  Best cost 292  0
+11  9
+  Best cost 292  0
+4  15
+  Best cost 292  0
+5  11
+  Best cost 292  0
+12  3
+  Best cost 292  0
+5  12
+  Best cost 292  0
+8  8
+  Best cost 292  0
+10  8
+  Best cost 292  0
+11  4
+  Best cost 292  0
+10  5
+  Best cost 292  0
+9  6
+  Best cost 292  0
+10  9
+  Best cost 292  0
+Time limit (10 s) reached at generation 17
+Improvement log saved with final result
+
+OUTPUTING

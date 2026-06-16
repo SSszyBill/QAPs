@@ -1,0 +1,41 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/had18.dat
+Instance Name: had18
+New best cost: 5970.000000 at iteration 1 (time: 0.000035 s)
+New best cost: 5802.000000 at iteration 2 (time: 0.000063 s)
+New best cost: 5696.000000 at iteration 3 (time: 0.000084 s)
+New best cost: 5652.000000 at iteration 4 (time: 0.000103 s)
+New best cost: 5632.000000 at iteration 5 (time: 0.000121 s)
+New best cost: 5606.000000 at iteration 6 (time: 0.000140 s)
+New best cost: 5590.000000 at iteration 7 (time: 0.000157 s)
+New best cost: 5560.000000 at iteration 8 (time: 0.000174 s)
+New best cost: 5528.000000 at iteration 9 (time: 0.000191 s)
+New best cost: 5512.000000 at iteration 10 (time: 0.000208 s)
+New best cost: 5468.000000 at iteration 11 (time: 0.000226 s)
+New best cost: 5454.000000 at iteration 12 (time: 0.000254 s)
+New best cost: 5450.000000 at iteration 13 (time: 0.000273 s)
+New best cost: 5432.000000 at iteration 14 (time: 0.000291 s)
+New best cost: 5430.000000 at iteration 15 (time: 0.000308 s)
+New best cost: 5428.000000 at iteration 16 (time: 0.000325 s)
+New best cost: 5412.000000 at iteration 17 (time: 0.000341 s)
+New best cost: 5410.000000 at iteration 18 (time: 0.000357 s)
+New best cost: 5408.000000 at iteration 20 (time: 0.000383 s)
+New best cost: 5384.000000 at iteration 38 (time: 0.000531 s)
+New best cost: 5376.000000 at iteration 39 (time: 0.000548 s)
+New best cost: 5368.000000 at iteration 79 (time: 0.000850 s)
+New best cost: 5366.000000 at iteration 80 (time: 0.000865 s)
+New best cost: 5364.000000 at iteration 87 (time: 0.000924 s)
+New best cost: 5362.000000 at iteration 88 (time: 0.000939 s)
+New best cost: 5360.000000 at iteration 89 (time: 0.000953 s)
+New best cost: 5358.000000 at iteration 272 (time: 0.002317 s)
+Time limit (10.00 s) reached at iteration 4629883
+Trial 1/1 Cost: 5358.000000
+
+--- Final Results ---
+Instance: had18
+Global Best Cost: 5358.000000
+Total Time: 10.000007 seconds
+Improvement log saved to results/baseline/had18_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

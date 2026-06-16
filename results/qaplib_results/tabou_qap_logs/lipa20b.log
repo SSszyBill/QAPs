@@ -1,0 +1,41 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/lipa20b.dat
+Instance Name: lipa20b
+New best cost: 34178.000000 at iteration 1 (time: 0.000044 s)
+New best cost: 33450.000000 at iteration 2 (time: 0.000074 s)
+New best cost: 32939.000000 at iteration 3 (time: 0.000097 s)
+New best cost: 32358.000000 at iteration 4 (time: 0.000118 s)
+New best cost: 31873.000000 at iteration 5 (time: 0.000139 s)
+New best cost: 31781.000000 at iteration 6 (time: 0.000159 s)
+New best cost: 31717.000000 at iteration 7 (time: 0.000179 s)
+New best cost: 31595.000000 at iteration 8 (time: 0.000200 s)
+New best cost: 31504.000000 at iteration 9 (time: 0.000220 s)
+New best cost: 31494.000000 at iteration 10 (time: 0.000241 s)
+New best cost: 31461.000000 at iteration 18 (time: 0.000340 s)
+New best cost: 31444.000000 at iteration 19 (time: 0.000361 s)
+New best cost: 31419.000000 at iteration 20 (time: 0.000382 s)
+New best cost: 31299.000000 at iteration 23 (time: 0.000422 s)
+New best cost: 31114.000000 at iteration 24 (time: 0.000442 s)
+New best cost: 31016.000000 at iteration 25 (time: 0.000463 s)
+New best cost: 30977.000000 at iteration 26 (time: 0.000483 s)
+New best cost: 30783.000000 at iteration 28 (time: 0.000513 s)
+New best cost: 30693.000000 at iteration 30 (time: 0.000543 s)
+New best cost: 30635.000000 at iteration 31 (time: 0.000562 s)
+New best cost: 30573.000000 at iteration 32 (time: 0.000583 s)
+New best cost: 30350.000000 at iteration 33 (time: 0.000604 s)
+New best cost: 29662.000000 at iteration 34 (time: 0.000624 s)
+New best cost: 29122.000000 at iteration 35 (time: 0.000644 s)
+New best cost: 28667.000000 at iteration 36 (time: 0.000665 s)
+New best cost: 27998.000000 at iteration 37 (time: 0.000685 s)
+New best cost: 27076.000000 at iteration 38 (time: 0.000704 s)
+Time limit (10.00 s) reached at iteration 3636988
+Trial 1/1 Cost: 27076.000000
+
+--- Final Results ---
+Instance: lipa20b
+Global Best Cost: 27076.000000
+Total Time: 10.000009 seconds
+Improvement log saved to results/baseline/lipa20b_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

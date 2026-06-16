@@ -1,0 +1,63 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/bur26b.dat
+Instance Name: bur26b
+New best cost: 4038280.000000 at iteration 1 (time: 0.000056 s)
+New best cost: 3983623.000000 at iteration 2 (time: 0.000083 s)
+New best cost: 3938310.000000 at iteration 3 (time: 0.000105 s)
+New best cost: 3908081.000000 at iteration 4 (time: 0.000125 s)
+New best cost: 3887762.000000 at iteration 5 (time: 0.000150 s)
+New best cost: 3874385.000000 at iteration 6 (time: 0.000170 s)
+New best cost: 3861840.000000 at iteration 7 (time: 0.000190 s)
+New best cost: 3852653.000000 at iteration 8 (time: 0.000209 s)
+New best cost: 3847216.000000 at iteration 9 (time: 0.000227 s)
+New best cost: 3841925.000000 at iteration 10 (time: 0.000246 s)
+New best cost: 3838561.000000 at iteration 11 (time: 0.000265 s)
+New best cost: 3836046.000000 at iteration 12 (time: 0.000282 s)
+New best cost: 3833667.000000 at iteration 13 (time: 0.000301 s)
+New best cost: 3832016.000000 at iteration 14 (time: 0.000325 s)
+New best cost: 3831274.000000 at iteration 15 (time: 0.000341 s)
+New best cost: 3831142.000000 at iteration 16 (time: 0.000358 s)
+New best cost: 3831108.000000 at iteration 17 (time: 0.000375 s)
+New best cost: 3831080.000000 at iteration 18 (time: 0.000396 s)
+New best cost: 3831066.000000 at iteration 43 (time: 0.000682 s)
+New best cost: 3830915.000000 at iteration 82 (time: 0.001124 s)
+New best cost: 3830901.000000 at iteration 83 (time: 0.001141 s)
+New best cost: 3830894.000000 at iteration 84 (time: 0.001157 s)
+New best cost: 3830873.000000 at iteration 97 (time: 0.001302 s)
+New best cost: 3828412.000000 at iteration 2976 (time: 0.018236 s)
+New best cost: 3826683.000000 at iteration 2977 (time: 0.018246 s)
+New best cost: 3825927.000000 at iteration 2978 (time: 0.018253 s)
+New best cost: 3825795.000000 at iteration 2979 (time: 0.018260 s)
+New best cost: 3825717.000000 at iteration 2980 (time: 0.018267 s)
+New best cost: 3825654.000000 at iteration 2981 (time: 0.018274 s)
+New best cost: 3825598.000000 at iteration 2982 (time: 0.018280 s)
+New best cost: 3825577.000000 at iteration 2983 (time: 0.018286 s)
+New best cost: 3825510.000000 at iteration 2984 (time: 0.018293 s)
+New best cost: 3825504.000000 at iteration 2985 (time: 0.018299 s)
+New best cost: 3825490.000000 at iteration 6200 (time: 0.033490 s)
+New best cost: 3825412.000000 at iteration 6201 (time: 0.033511 s)
+New best cost: 3825352.000000 at iteration 6656 (time: 0.035944 s)
+New best cost: 3825163.000000 at iteration 6657 (time: 0.035952 s)
+New best cost: 3825010.000000 at iteration 6658 (time: 0.035958 s)
+New best cost: 3820746.000000 at iteration 10139 (time: 0.051202 s)
+New best cost: 3819906.000000 at iteration 10140 (time: 0.051214 s)
+New best cost: 3819168.000000 at iteration 10141 (time: 0.051221 s)
+New best cost: 3818834.000000 at iteration 10142 (time: 0.051227 s)
+New best cost: 3818811.000000 at iteration 10166 (time: 0.051337 s)
+New best cost: 3818797.000000 at iteration 10167 (time: 0.051344 s)
+New best cost: 3818734.000000 at iteration 10168 (time: 0.051350 s)
+New best cost: 3818018.000000 at iteration 16875 (time: 0.080689 s)
+New best cost: 3817915.000000 at iteration 16876 (time: 0.080700 s)
+New best cost: 3817866.000000 at iteration 16877 (time: 0.080707 s)
+New best cost: 3817852.000000 at iteration 16878 (time: 0.080714 s)
+Time limit (10.00 s) reached at iteration 2263202
+Trial 1/1 Cost: 3817852.000000
+
+--- Final Results ---
+Instance: bur26b
+Global Best Cost: 3817852.000000
+Total Time: 10.000006 seconds
+Improvement log saved to results/baseline/bur26b_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

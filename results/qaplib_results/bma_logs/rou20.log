@@ -1,0 +1,26 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/rou20.dat
+Extracted Name: rou20
+Problem Size (N): 20
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/rou20_bma_improvements.txt
+New best cost: 725522 at time: 0.211426 s
+13  12
+  Best cost 725522  0
+13  8
+  Best cost 725522  0
+12  11
+  Best cost 725522  0
+10  12
+  Best cost 725522  0
+13  10
+  Best cost 725522  0
+0  0
+  Best cost 725522  0
+11  13
+  Best cost 725522  0
+0  0
+  Best cost 725522  0
+8  10
+  Best cost 725522  0
+0  0
+  Best cost 725522  0

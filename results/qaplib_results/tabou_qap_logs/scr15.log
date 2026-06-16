@@ -1,0 +1,34 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/scr15.dat
+Instance Name: scr15
+New best cost: 73890.000000 at iteration 1 (time: 0.000027 s)
+New best cost: 68104.000000 at iteration 2 (time: 0.000048 s)
+New best cost: 65014.000000 at iteration 3 (time: 0.000064 s)
+New best cost: 62080.000000 at iteration 4 (time: 0.000077 s)
+New best cost: 59780.000000 at iteration 5 (time: 0.000090 s)
+New best cost: 58108.000000 at iteration 6 (time: 0.000107 s)
+New best cost: 57456.000000 at iteration 7 (time: 0.000122 s)
+New best cost: 57292.000000 at iteration 8 (time: 0.000137 s)
+New best cost: 57206.000000 at iteration 9 (time: 0.000152 s)
+New best cost: 57110.000000 at iteration 53 (time: 0.000401 s)
+New best cost: 56318.000000 at iteration 67 (time: 0.000490 s)
+New best cost: 55986.000000 at iteration 68 (time: 0.000508 s)
+New best cost: 54726.000000 at iteration 70 (time: 0.000527 s)
+New best cost: 54230.000000 at iteration 72 (time: 0.000554 s)
+New best cost: 53596.000000 at iteration 73 (time: 0.000567 s)
+New best cost: 53114.000000 at iteration 75 (time: 0.000602 s)
+New best cost: 53108.000000 at iteration 199 (time: 0.001191 s)
+New best cost: 52920.000000 at iteration 1076 (time: 0.004858 s)
+New best cost: 51720.000000 at iteration 1077 (time: 0.004872 s)
+New best cost: 51140.000000 at iteration 1078 (time: 0.004882 s)
+Time limit (10.00 s) reached at iteration 6431525
+Trial 1/1 Cost: 51140.000000
+
+--- Final Results ---
+Instance: scr15
+Global Best Cost: 51140.000000
+Total Time: 10.000006 seconds
+Improvement log saved to results/baseline/scr15_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

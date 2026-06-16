@@ -1,0 +1,34 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/had14.dat
+Instance Name: had14
+New best cost: 3094.000000 at iteration 1 (time: 0.000019 s)
+New best cost: 3022.000000 at iteration 2 (time: 0.000039 s)
+New best cost: 2958.000000 at iteration 3 (time: 0.000052 s)
+New best cost: 2914.000000 at iteration 4 (time: 0.000068 s)
+New best cost: 2870.000000 at iteration 5 (time: 0.000081 s)
+New best cost: 2846.000000 at iteration 6 (time: 0.000099 s)
+New best cost: 2820.000000 at iteration 7 (time: 0.000111 s)
+New best cost: 2798.000000 at iteration 8 (time: 0.000126 s)
+New best cost: 2790.000000 at iteration 9 (time: 0.000137 s)
+New best cost: 2788.000000 at iteration 10 (time: 0.000152 s)
+New best cost: 2776.000000 at iteration 12 (time: 0.000169 s)
+New best cost: 2768.000000 at iteration 21 (time: 0.000224 s)
+New best cost: 2752.000000 at iteration 22 (time: 0.000236 s)
+New best cost: 2748.000000 at iteration 23 (time: 0.000247 s)
+New best cost: 2746.000000 at iteration 24 (time: 0.000257 s)
+New best cost: 2744.000000 at iteration 41 (time: 0.000343 s)
+New best cost: 2740.000000 at iteration 826 (time: 0.004075 s)
+New best cost: 2728.000000 at iteration 827 (time: 0.004092 s)
+New best cost: 2726.000000 at iteration 828 (time: 0.004103 s)
+New best cost: 2724.000000 at iteration 830 (time: 0.004118 s)
+Time limit (10.00 s) reached at iteration 7440468
+Trial 1/1 Cost: 2724.000000
+
+--- Final Results ---
+Instance: had14
+Global Best Cost: 2724.000000
+Total Time: 10.000006 seconds
+Improvement log saved to results/baseline/had14_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

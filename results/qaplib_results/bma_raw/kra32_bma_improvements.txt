@@ -1,0 +1,3 @@
+# Time(s) ObjectiveValue
+0.720468 88700
+10.0648 88700

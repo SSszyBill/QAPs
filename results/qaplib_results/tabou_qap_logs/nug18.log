@@ -1,0 +1,40 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/nug18.dat
+Instance Name: nug18
+New best cost: 2402.000000 at iteration 1 (time: 0.000017 s)
+New best cost: 2324.000000 at iteration 2 (time: 0.000028 s)
+New best cost: 2266.000000 at iteration 3 (time: 0.000036 s)
+New best cost: 2212.000000 at iteration 4 (time: 0.000044 s)
+New best cost: 2168.000000 at iteration 5 (time: 0.000052 s)
+New best cost: 2106.000000 at iteration 6 (time: 0.000059 s)
+New best cost: 2076.000000 at iteration 7 (time: 0.000066 s)
+New best cost: 2056.000000 at iteration 8 (time: 0.000073 s)
+New best cost: 2038.000000 at iteration 9 (time: 0.000080 s)
+New best cost: 2024.000000 at iteration 11 (time: 0.000092 s)
+New best cost: 2022.000000 at iteration 12 (time: 0.000099 s)
+New best cost: 2016.000000 at iteration 16 (time: 0.000119 s)
+New best cost: 2012.000000 at iteration 18 (time: 0.000133 s)
+New best cost: 2004.000000 at iteration 19 (time: 0.000142 s)
+New best cost: 1996.000000 at iteration 21 (time: 0.000154 s)
+New best cost: 1994.000000 at iteration 22 (time: 0.000162 s)
+New best cost: 1986.000000 at iteration 23 (time: 0.000169 s)
+New best cost: 1982.000000 at iteration 29 (time: 0.000197 s)
+New best cost: 1978.000000 at iteration 38 (time: 0.000243 s)
+New best cost: 1968.000000 at iteration 147 (time: 0.000682 s)
+New best cost: 1966.000000 at iteration 188 (time: 0.000849 s)
+New best cost: 1960.000000 at iteration 189 (time: 0.000857 s)
+New best cost: 1954.000000 at iteration 225 (time: 0.001003 s)
+New best cost: 1946.000000 at iteration 279 (time: 0.001233 s)
+New best cost: 1936.000000 at iteration 589 (time: 0.002446 s)
+New best cost: 1930.000000 at iteration 11809 (time: 0.030129 s)
+Time limit (10.00 s) reached at iteration 4490409
+Trial 1/1 Cost: 1930.000000
+
+--- Final Results ---
+Instance: nug18
+Global Best Cost: 1930.000000
+Total Time: 10.000005 seconds
+Improvement log saved to results/baseline/nug18_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

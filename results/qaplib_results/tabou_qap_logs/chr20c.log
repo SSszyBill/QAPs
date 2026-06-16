@@ -1,0 +1,58 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr20c.dat
+Instance Name: chr20c
+New best cost: 58602.000000 at iteration 1 (time: 0.000043 s)
+New best cost: 46690.000000 at iteration 2 (time: 0.000068 s)
+New best cost: 40822.000000 at iteration 3 (time: 0.000086 s)
+New best cost: 36922.000000 at iteration 4 (time: 0.000102 s)
+New best cost: 33262.000000 at iteration 5 (time: 0.000119 s)
+New best cost: 31706.000000 at iteration 6 (time: 0.000138 s)
+New best cost: 31002.000000 at iteration 7 (time: 0.000168 s)
+New best cost: 30584.000000 at iteration 8 (time: 0.000185 s)
+New best cost: 30316.000000 at iteration 9 (time: 0.000203 s)
+New best cost: 30154.000000 at iteration 10 (time: 0.000219 s)
+New best cost: 28386.000000 at iteration 11 (time: 0.000239 s)
+New best cost: 21098.000000 at iteration 12 (time: 0.000257 s)
+New best cost: 19860.000000 at iteration 13 (time: 0.000274 s)
+New best cost: 19796.000000 at iteration 14 (time: 0.000292 s)
+New best cost: 19760.000000 at iteration 15 (time: 0.000309 s)
+New best cost: 19750.000000 at iteration 16 (time: 0.000334 s)
+New best cost: 19742.000000 at iteration 17 (time: 0.000350 s)
+New best cost: 19734.000000 at iteration 18 (time: 0.000367 s)
+New best cost: 19142.000000 at iteration 81 (time: 0.000945 s)
+New best cost: 18650.000000 at iteration 82 (time: 0.000964 s)
+New best cost: 18320.000000 at iteration 83 (time: 0.000979 s)
+New best cost: 18240.000000 at iteration 84 (time: 0.000992 s)
+New best cost: 18204.000000 at iteration 85 (time: 0.001006 s)
+New best cost: 17276.000000 at iteration 3936 (time: 0.025505 s)
+New best cost: 17056.000000 at iteration 3937 (time: 0.025547 s)
+New best cost: 17000.000000 at iteration 3938 (time: 0.025564 s)
+New best cost: 16996.000000 at iteration 3939 (time: 0.025577 s)
+New best cost: 16860.000000 at iteration 10414 (time: 0.046209 s)
+New best cost: 16548.000000 at iteration 10415 (time: 0.046215 s)
+New best cost: 16524.000000 at iteration 10416 (time: 0.046220 s)
+New best cost: 16382.000000 at iteration 12213 (time: 0.050912 s)
+New best cost: 15806.000000 at iteration 12214 (time: 0.050918 s)
+New best cost: 15774.000000 at iteration 12215 (time: 0.050923 s)
+New best cost: 15770.000000 at iteration 12216 (time: 0.050927 s)
+New best cost: 15522.000000 at iteration 24491 (time: 0.083321 s)
+New best cost: 15098.000000 at iteration 24492 (time: 0.083327 s)
+New best cost: 14858.000000 at iteration 24493 (time: 0.083333 s)
+New best cost: 14826.000000 at iteration 24494 (time: 0.083337 s)
+New best cost: 14816.000000 at iteration 24495 (time: 0.083342 s)
+New best cost: 14812.000000 at iteration 24496 (time: 0.083346 s)
+New best cost: 14306.000000 at iteration 90231 (time: 0.257415 s)
+New best cost: 14226.000000 at iteration 90232 (time: 0.257424 s)
+New best cost: 14154.000000 at iteration 90233 (time: 0.257429 s)
+New best cost: 14142.000000 at iteration 90234 (time: 0.257433 s)
+Time limit (10.00 s) reached at iteration 3764282
+Trial 1/1 Cost: 14142.000000
+
+--- Final Results ---
+Instance: chr20c
+Global Best Cost: 14142.000000
+Total Time: 10.000005 seconds
+Improvement log saved to results/baseline/chr20c_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

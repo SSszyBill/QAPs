@@ -1,0 +1,33 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/lipa20a.dat
+Instance Name: lipa20a
+New best cost: 3837.000000 at iteration 1 (time: 0.000042 s)
+New best cost: 3809.000000 at iteration 2 (time: 0.000067 s)
+New best cost: 3799.000000 at iteration 3 (time: 0.000086 s)
+New best cost: 3787.000000 at iteration 4 (time: 0.000104 s)
+New best cost: 3772.000000 at iteration 5 (time: 0.000125 s)
+New best cost: 3771.000000 at iteration 6 (time: 0.000144 s)
+New best cost: 3769.000000 at iteration 22 (time: 0.000320 s)
+New best cost: 3761.000000 at iteration 36 (time: 0.000467 s)
+New best cost: 3758.000000 at iteration 169 (time: 0.001786 s)
+New best cost: 3754.000000 at iteration 206 (time: 0.002170 s)
+New best cost: 3753.000000 at iteration 1790 (time: 0.011306 s)
+New best cost: 3752.000000 at iteration 1792 (time: 0.011319 s)
+New best cost: 3746.000000 at iteration 1800 (time: 0.011352 s)
+New best cost: 3739.000000 at iteration 1801 (time: 0.011358 s)
+New best cost: 3738.000000 at iteration 1802 (time: 0.011364 s)
+New best cost: 3735.000000 at iteration 1803 (time: 0.011370 s)
+New best cost: 3722.000000 at iteration 1804 (time: 0.011376 s)
+New best cost: 3706.000000 at iteration 2142 (time: 0.012638 s)
+New best cost: 3683.000000 at iteration 2143 (time: 0.012647 s)
+Time limit (10.00 s) reached at iteration 3679741
+Trial 1/1 Cost: 3683.000000
+
+--- Final Results ---
+Instance: lipa20a
+Global Best Cost: 3683.000000
+Total Time: 10.000007 seconds
+Improvement log saved to results/baseline/lipa20a_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

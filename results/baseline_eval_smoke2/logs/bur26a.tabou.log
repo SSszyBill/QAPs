@@ -1,0 +1,33 @@
+Solution of value: 5690690 found at iter. 1
+Solution of value: 5639854 found at iter. 2
+Solution of value: 5599802 found at iter. 3
+Solution of value: 5571267 found at iter. 4
+Solution of value: 5548472 found at iter. 5
+Solution of value: 5523790 found at iter. 6
+Solution of value: 5507375 found at iter. 7
+Solution of value: 5493611 found at iter. 8
+Solution of value: 5486190 found at iter. 9
+Solution of value: 5478309 found at iter. 10
+Solution of value: 5471053 found at iter. 11
+Solution of value: 5466382 found at iter. 12
+Solution of value: 5464496 found at iter. 13
+Solution of value: 5462674 found at iter. 14
+Solution of value: 5460937 found at iter. 15
+Solution of value: 5460650 found at iter. 16
+Solution of value: 5460392 found at iter. 17
+Solution of value: 5460259 found at iter. 18
+Solution of value: 5459901 found at iter. 19
+Solution of value: 5459772 found at iter. 20
+Solution of value: 5459681 found at iter. 21
+Solution of value: 5459410 found at iter. 22
+Solution of value: 5456532 found at iter. 23
+Solution of value: 5455536 found at iter. 24
+Solution of value: 5454759 found at iter. 25
+Solution of value: 5454067 found at iter. 26
+Solution of value: 5453002 found at iter. 27
+Solution of value: 5450517 found at iter. 28
+Solution of value: 5449717 found at iter. 29
+Solution of value: 5449071 found at iter. 30
+5449071 Solution found by tabu search:
+12 11 2 22 20 3 10 14 6 7 13 17 4 19 15 1 18 0 8 21 9 16 23 24 25 5 
+Average cost: 5449071.000000, average dev: 0.412795

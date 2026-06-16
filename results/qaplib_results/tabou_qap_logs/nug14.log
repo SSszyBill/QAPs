@@ -1,0 +1,31 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/nug14.dat
+Instance Name: nug14
+New best cost: 1274.000000 at iteration 1 (time: 0.000012 s)
+New best cost: 1206.000000 at iteration 2 (time: 0.000034 s)
+New best cost: 1158.000000 at iteration 3 (time: 0.000042 s)
+New best cost: 1112.000000 at iteration 4 (time: 0.000048 s)
+New best cost: 1082.000000 at iteration 5 (time: 0.000055 s)
+New best cost: 1066.000000 at iteration 6 (time: 0.000061 s)
+New best cost: 1060.000000 at iteration 23 (time: 0.000112 s)
+New best cost: 1058.000000 at iteration 25 (time: 0.000121 s)
+New best cost: 1050.000000 at iteration 48 (time: 0.000180 s)
+New best cost: 1048.000000 at iteration 70 (time: 0.000243 s)
+New best cost: 1046.000000 at iteration 71 (time: 0.000249 s)
+New best cost: 1044.000000 at iteration 79 (time: 0.000274 s)
+New best cost: 1042.000000 at iteration 80 (time: 0.000281 s)
+New best cost: 1030.000000 at iteration 464 (time: 0.001234 s)
+New best cost: 1026.000000 at iteration 880 (time: 0.002169 s)
+New best cost: 1024.000000 at iteration 902 (time: 0.002221 s)
+New best cost: 1014.000000 at iteration 1064 (time: 0.002565 s)
+Time limit (10.00 s) reached at iteration 7203163
+Trial 1/1 Cost: 1014.000000
+
+--- Final Results ---
+Instance: nug14
+Global Best Cost: 1014.000000
+Total Time: 10.000007 seconds
+Improvement log saved to results/baseline/nug14_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

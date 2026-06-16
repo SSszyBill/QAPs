@@ -1,0 +1,43 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/esc128.dat
+Instance Name: esc128
+New best cost: 302.000000 at iteration 1 (time: 0.004272 s)
+New best cost: 270.000000 at iteration 2 (time: 0.004645 s)
+New best cost: 242.000000 at iteration 3 (time: 0.004994 s)
+New best cost: 222.000000 at iteration 4 (time: 0.005316 s)
+New best cost: 202.000000 at iteration 5 (time: 0.005637 s)
+New best cost: 184.000000 at iteration 6 (time: 0.005969 s)
+New best cost: 168.000000 at iteration 7 (time: 0.006278 s)
+New best cost: 154.000000 at iteration 8 (time: 0.006590 s)
+New best cost: 146.000000 at iteration 9 (time: 0.006912 s)
+New best cost: 138.000000 at iteration 10 (time: 0.007212 s)
+New best cost: 130.000000 at iteration 11 (time: 0.007512 s)
+New best cost: 122.000000 at iteration 12 (time: 0.007818 s)
+New best cost: 118.000000 at iteration 13 (time: 0.008118 s)
+New best cost: 114.000000 at iteration 14 (time: 0.008416 s)
+New best cost: 110.000000 at iteration 15 (time: 0.008714 s)
+New best cost: 106.000000 at iteration 16 (time: 0.009018 s)
+New best cost: 102.000000 at iteration 17 (time: 0.009315 s)
+New best cost: 98.000000 at iteration 18 (time: 0.009619 s)
+New best cost: 96.000000 at iteration 19 (time: 0.009890 s)
+New best cost: 94.000000 at iteration 20 (time: 0.010003 s)
+New best cost: 90.000000 at iteration 65585 (time: 7.069570 s)
+New best cost: 84.000000 at iteration 65586 (time: 7.069702 s)
+New best cost: 80.000000 at iteration 65587 (time: 7.069819 s)
+New best cost: 76.000000 at iteration 65588 (time: 7.069932 s)
+New best cost: 74.000000 at iteration 65589 (time: 7.070044 s)
+New best cost: 72.000000 at iteration 67791 (time: 7.312341 s)
+New best cost: 68.000000 at iteration 67792 (time: 7.312458 s)
+New best cost: 66.000000 at iteration 67793 (time: 7.312570 s)
+New best cost: 64.000000 at iteration 67794 (time: 7.312681 s)
+Time limit (10.00 s) reached at iteration 92449
+Trial 1/1 Cost: 64.000000
+
+--- Final Results ---
+Instance: esc128
+Global Best Cost: 64.000000
+Total Time: 10.000020 seconds
+Improvement log saved to results/baseline/esc128_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

@@ -1,0 +1,26 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/chr20c.dat
+Extracted Name: chr20c
+Problem Size (N): 20
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/chr20c_bma_improvements.txt
+New best cost: 14142 at time: 0.216277 s
+5  6
+  Best cost 14142  0
+6  7
+  Best cost 14142  0
+2  9
+  Best cost 14142  0
+2  10
+  Best cost 14142  0
+5  7
+  Best cost 14142  0
+10  0
+  Best cost 14142  0
+0  0
+  Best cost 14142  0
+5  7
+  Best cost 14142  0
+8  3
+  Best cost 14142  0
+11  12
+  Best cost 14142  0

@@ -1,0 +1,44 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/tai25a.dat
+Instance Name: tai25a
+New best cost: 1417766.000000 at iteration 1 (time: 0.000050 s)
+New best cost: 1376808.000000 at iteration 2 (time: 0.000074 s)
+New best cost: 1338540.000000 at iteration 3 (time: 0.000091 s)
+New best cost: 1307890.000000 at iteration 4 (time: 0.000107 s)
+New best cost: 1293506.000000 at iteration 5 (time: 0.000122 s)
+New best cost: 1284688.000000 at iteration 6 (time: 0.000137 s)
+New best cost: 1277456.000000 at iteration 7 (time: 0.000151 s)
+New best cost: 1272486.000000 at iteration 8 (time: 0.000166 s)
+New best cost: 1267790.000000 at iteration 9 (time: 0.000184 s)
+New best cost: 1257018.000000 at iteration 10 (time: 0.000201 s)
+New best cost: 1249836.000000 at iteration 11 (time: 0.000215 s)
+New best cost: 1243568.000000 at iteration 12 (time: 0.000232 s)
+New best cost: 1239894.000000 at iteration 13 (time: 0.000249 s)
+New best cost: 1235764.000000 at iteration 14 (time: 0.000265 s)
+New best cost: 1234754.000000 at iteration 25 (time: 0.000374 s)
+New best cost: 1222410.000000 at iteration 26 (time: 0.000390 s)
+New best cost: 1222290.000000 at iteration 32 (time: 0.000455 s)
+New best cost: 1214518.000000 at iteration 34 (time: 0.000483 s)
+New best cost: 1208068.000000 at iteration 35 (time: 0.000501 s)
+New best cost: 1204782.000000 at iteration 36 (time: 0.000518 s)
+New best cost: 1201896.000000 at iteration 39 (time: 0.000559 s)
+New best cost: 1193738.000000 at iteration 40 (time: 0.000578 s)
+New best cost: 1190710.000000 at iteration 69 (time: 0.000898 s)
+New best cost: 1184278.000000 at iteration 1336 (time: 0.011683 s)
+New best cost: 1181168.000000 at iteration 2963 (time: 0.020594 s)
+New best cost: 1180904.000000 at iteration 9228 (time: 0.048277 s)
+New best cost: 1174640.000000 at iteration 10900 (time: 0.055359 s)
+New best cost: 1171944.000000 at iteration 111082 (time: 0.480707 s)
+New best cost: 1168766.000000 at iteration 223251 (time: 0.957272 s)
+New best cost: 1167256.000000 at iteration 223252 (time: 0.957284 s)
+Time limit (10.00 s) reached at iteration 2352721
+Trial 1/1 Cost: 1167256.000000
+
+--- Final Results ---
+Instance: tai25a
+Global Best Cost: 1167256.000000
+Total Time: 10.000008 seconds
+Improvement log saved to results/baseline/tai25a_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

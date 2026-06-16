@@ -1,0 +1,14 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/esc64a.dat
+Extracted Name: esc64a
+Problem Size (N): 64
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/esc64a_bma_improvements.txt
+New best cost: 116 at time: 7.62722 s
+43  30
+  Best cost 116  0
+42  29
+  Best cost 116  0
+Time limit (10 s) reached at generation 2
+Improvement log saved with final result
+
+OUTPUTING

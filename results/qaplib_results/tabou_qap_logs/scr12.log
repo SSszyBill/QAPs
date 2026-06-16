@@ -1,0 +1,25 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/scr12.dat
+Instance Name: scr12
+New best cost: 53164.000000 at iteration 1 (time: 0.000015 s)
+New best cost: 45028.000000 at iteration 2 (time: 0.000033 s)
+New best cost: 40520.000000 at iteration 3 (time: 0.000050 s)
+New best cost: 37614.000000 at iteration 4 (time: 0.000065 s)
+New best cost: 36794.000000 at iteration 5 (time: 0.000079 s)
+New best cost: 35478.000000 at iteration 6 (time: 0.000093 s)
+New best cost: 34640.000000 at iteration 7 (time: 0.000106 s)
+New best cost: 33988.000000 at iteration 10 (time: 0.000129 s)
+New best cost: 32948.000000 at iteration 14 (time: 0.000154 s)
+New best cost: 32292.000000 at iteration 15 (time: 0.000168 s)
+New best cost: 31410.000000 at iteration 22 (time: 0.000204 s)
+Time limit (10.00 s) reached at iteration 9532869
+Trial 1/1 Cost: 31410.000000
+
+--- Final Results ---
+Instance: scr12
+Global Best Cost: 31410.000000
+Total Time: 10.000005 seconds
+Improvement log saved to results/baseline/scr12_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

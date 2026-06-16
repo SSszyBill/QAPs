@@ -1,0 +1,56 @@
+Using random seed: 42
+Time limit set to: 10.00 seconds
+Running Robust Tabu Search...
+Full Path: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/nug28.dat
+Instance Name: nug28
+New best cost: 6358.000000 at iteration 1 (time: 0.000050 s)
+New best cost: 6062.000000 at iteration 2 (time: 0.000069 s)
+New best cost: 5926.000000 at iteration 3 (time: 0.000085 s)
+New best cost: 5838.000000 at iteration 4 (time: 0.000098 s)
+New best cost: 5758.000000 at iteration 5 (time: 0.000112 s)
+New best cost: 5712.000000 at iteration 6 (time: 0.000126 s)
+New best cost: 5666.000000 at iteration 7 (time: 0.000139 s)
+New best cost: 5622.000000 at iteration 8 (time: 0.000152 s)
+New best cost: 5586.000000 at iteration 9 (time: 0.000165 s)
+New best cost: 5542.000000 at iteration 10 (time: 0.000179 s)
+New best cost: 5510.000000 at iteration 11 (time: 0.000191 s)
+New best cost: 5484.000000 at iteration 12 (time: 0.000204 s)
+New best cost: 5464.000000 at iteration 13 (time: 0.000217 s)
+New best cost: 5444.000000 at iteration 14 (time: 0.000229 s)
+New best cost: 5436.000000 at iteration 15 (time: 0.000242 s)
+New best cost: 5408.000000 at iteration 16 (time: 0.000255 s)
+New best cost: 5402.000000 at iteration 17 (time: 0.000267 s)
+New best cost: 5398.000000 at iteration 18 (time: 0.000280 s)
+New best cost: 5354.000000 at iteration 20 (time: 0.000302 s)
+New best cost: 5332.000000 at iteration 21 (time: 0.000315 s)
+New best cost: 5314.000000 at iteration 22 (time: 0.000326 s)
+New best cost: 5306.000000 at iteration 36 (time: 0.000448 s)
+New best cost: 5288.000000 at iteration 37 (time: 0.000460 s)
+New best cost: 5286.000000 at iteration 38 (time: 0.000471 s)
+New best cost: 5278.000000 at iteration 39 (time: 0.000483 s)
+New best cost: 5274.000000 at iteration 113 (time: 0.001106 s)
+New best cost: 5270.000000 at iteration 129 (time: 0.001244 s)
+New best cost: 5264.000000 at iteration 130 (time: 0.001256 s)
+New best cost: 5262.000000 at iteration 147 (time: 0.001384 s)
+New best cost: 5256.000000 at iteration 148 (time: 0.001394 s)
+New best cost: 5250.000000 at iteration 149 (time: 0.001404 s)
+New best cost: 5246.000000 at iteration 150 (time: 0.001414 s)
+New best cost: 5236.000000 at iteration 151 (time: 0.001424 s)
+New best cost: 5234.000000 at iteration 152 (time: 0.001435 s)
+New best cost: 5216.000000 at iteration 153 (time: 0.001445 s)
+New best cost: 5202.000000 at iteration 154 (time: 0.001455 s)
+New best cost: 5196.000000 at iteration 155 (time: 0.001465 s)
+New best cost: 5190.000000 at iteration 157 (time: 0.001483 s)
+New best cost: 5188.000000 at iteration 253 (time: 0.002186 s)
+New best cost: 5176.000000 at iteration 254 (time: 0.002197 s)
+New best cost: 5170.000000 at iteration 261 (time: 0.002248 s)
+New best cost: 5166.000000 at iteration 276 (time: 0.002356 s)
+Time limit (10.00 s) reached at iteration 1925506
+Trial 1/1 Cost: 5166.000000
+
+--- Final Results ---
+Instance: nug28
+Global Best Cost: 5166.000000
+Total Time: 10.000007 seconds
+Improvement log saved to results/baseline/nug28_rots_improvements.txt
+Result saved to tabou_qap2_result.txt

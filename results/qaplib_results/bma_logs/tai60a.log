@@ -1,0 +1,36 @@
+Time limit set to: 10 seconds
+Input File: /home/xjx/A-xjx/QAPs/qaplibs/QAPLIB/tai60a.dat
+Extracted Name: tai60a
+Problem Size (N): 60
+Improvement log will be saved to: /home/xjx/A-xjx/QAPs/results/baseline/tai60a_bma_improvements.txt
+New best cost: 7295742 at time: 3.03076 s
+46  24
+  Best cost 7295742  0
+48  19
+  Best cost 7295742  0
+33  37
+  Best cost 7295742  0
+New best cost: 7289356 at time: 4.79497 s
+35  32
+  Best cost 7289356  4.38661
+38  36
+  Best cost 7289356  4.38661
+New best cost: 7280262 at time: 5.98955 s
+43  25
+  Best cost 7280262  5.54789
+40  25
+  Best cost 7280262  5.54789
+35  30
+  Best cost 7280262  5.54789
+31  35
+  Best cost 7280262  5.54789
+40  30
+  Best cost 7280262  5.54789
+38  31
+  Best cost 7280262  5.54789
+41  25
+  Best cost 7280262  5.54789
+Time limit (10 s) reached at generation 12
+Improvement log saved with final result
+
+OUTPUTING
