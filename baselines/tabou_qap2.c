@@ -128,7 +128,7 @@ void tabu_search(int n,                  /* problem size */
                  double *best_cost,      /* cost */
                  int tabu_duration,      
                  int aspiration,         
-                 int nr_iterations,
+                 long long nr_iterations,
                  clock_t start_time,     /* start time for timing */
                  FILE* log_file,         /* file to log improvements */
                  double time_limit)      /* time limit in seconds (0 = no limit) */
@@ -137,7 +137,7 @@ void tabu_search(int n,                  /* problem size */
  {type_vector p;                        /* current solution */
   type_matrix delta;                    /* store move costs */
   int** tabu_list;                      /* tabu status */
-  int current_iteration;                /* current iteration */
+  long long current_iteration;          /* current iteration */
   double current_cost;                  /* current sol. value */
   int i, j, k, i_retained, j_retained;  /* indices */
   double min_delta;                     /* retained move cost */
@@ -178,7 +178,7 @@ void tabu_search(int n,                  /* problem size */
       elapsed_time = (double)(clock() - start_time) / CLOCKS_PER_SEC;
       if (elapsed_time >= time_limit) {
         time_limit_reached = TRUE;
-        printf("Time limit (%.2f s) reached at iteration %d\n", time_limit, current_iteration);
+        printf("Time limit (%.2f s) reached at iteration %lld\n", time_limit, current_iteration);
         break;
       }
     }
@@ -226,7 +226,7 @@ void tabu_search(int n,                  /* problem size */
         elapsed_time = (double)(clock() - start_time) / CLOCKS_PER_SEC;
         
         /* Print to console */
-        printf("New best cost: %.6f at iteration %d (time: %.6f s)\n", 
+        printf("New best cost: %.6f at iteration %lld (time: %.6f s)\n", 
                current_cost, current_iteration, elapsed_time);
         
         /* Log to file */
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
       fflush(improvement_log);
   }
 
-  int nr_iterations = 10000000000 * n;
+  long long nr_iterations = 10000000000LL * n;
   int nr_resolutions = 1;
   
   /* --- START TIMING --- */
