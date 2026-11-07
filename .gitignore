@@ -2,3 +2,4 @@ wandb/
 qaplibs/
 baselines/data
 results_bak/
+__pycache__/
